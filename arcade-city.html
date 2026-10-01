@@ -36,7 +36,7 @@
 <div class="menuShade" id="menuShade"><div class="menu">
  <div class="releaseTag">VERSION 1.1 · RACE & ROADS</div>
  <h1 class="logo">ARCADE<br><span>CITY 3D</span></h1>
- <p>The full release: refined racing, smart city traffic, police, weather, damage, customization, career progression, GPS, service locations, audio, and performance tuning.</p>
+ <p>The race-and-roads update: full race routes on the map, checkpoint GPS, splits and AI difficulty, plus rebuilt traffic signals and street signs.</p>
  <div class="menuBtns">
   <button class="primary" id="driveBtn">DRIVE CITY<small>Continue your career</small></button>
   <button id="garageBtn">GARAGE & DEALER<small>Buy and switch cars</small></button>
@@ -208,6 +208,23 @@ function addDistricts(){
  for(let v=-390;v<=390;v+=42){box(v,-430,16,.6,.7,0xb8bcc1);box(v,430,16,.6,.7,0xb8bcc1);box(-430,v,.7,.6,16,0xb8bcc1);box(430,v,.7,.6,16,0xb8bcc1)}
 }
 addDistricts();
+const signTextureCache=new Map();
+function makeSignTexture(text,bg='#1c6a43',fg='#ffffff'){
+ const key=text+'|'+bg+'|'+fg;if(signTextureCache.has(key))return signTextureCache.get(key);
+ const c=document.createElement('canvas');c.width=256;c.height=72;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);x.strokeStyle='#e9eef2';x.lineWidth=6;x.strokeRect(3,3,c.width-6,c.height-6);x.fillStyle=fg;x.font='900 30px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText(text,c.width/2,c.height/2);
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;signTextureCache.set(key,tex);return tex
+}
+function addFlatSign(x,y,z,text,rot=0,bg='#1c6a43',w=7,h=1.8){
+ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:makeSignTexture(text,bg),side:THREE.DoubleSide,transparent:false}));m.position.set(x,y,z);m.rotation.y=rot;city.add(m);return m
+}
+function makeSignalHead(x,y,z,rot=0){
+ const g=new THREE.Group(),housing=new THREE.Mesh(new THREE.BoxGeometry(1.45,3.5,.72),new THREE.MeshStandardMaterial({color:0x11161b,roughness:.72}));g.add(housing);
+ const colors=[0xff3344,0xffc83d,0x38e36c],lamps=[];
+ for(let i=0;i<3;i++){const mat=new THREE.MeshStandardMaterial({color:colors[i],emissive:colors[i],emissiveIntensity:.08,roughness:.4}),lamp=new THREE.Mesh(new THREE.SphereGeometry(.38,10,8),mat);lamp.position.set(0,1.05-i*1.05,.42);g.add(lamp);lamps.push(mat)}
+ const visorMat=new THREE.MeshStandardMaterial({color:0x080b0e,roughness:.86});for(let i=0;i<3;i++){const visor=new THREE.Mesh(new THREE.BoxGeometry(1.05,.12,.85),visorMat);visor.position.set(0,1.37-i*1.05,.53);visor.rotation.x=-.28;g.add(visor)}
+ g.position.set(x,y,z);g.rotation.y=rot;city.add(g);return lamps
+}
+function setSignalHead(lamps,state){const active=state==='red'?0:state==='yellow'?1:2;lamps.forEach((m,i)=>m.emissiveIntensity=i===active?3.2:.06)}
 function addCityLifeProps(){
  const pc=[0x8fa4b8,0x555b64,0xb84b4b,0xd3ad48,0x4e8f72],spots=[[-204,-147,0],[-126,-147,0],[39,-147,0],[117,-147,0],[-147,117,Math.PI/2],[87,117,Math.PI/2],[165,117,Math.PI/2],[-303,90,Math.PI/2],[303,-42,Math.PI/2]];
  for(let i=0;i<spots.length;i++){const p=spots[i],g=new THREE.Group(),body=new THREE.Mesh(new THREE.BoxGeometry(3.4,.75,6.1),new THREE.MeshStandardMaterial({color:pc[i%pc.length],roughness:.52,metalness:.18}));body.position.y=.72;g.add(body);const top=new THREE.Mesh(new THREE.BoxGeometry(2.7,.7,2.6),new THREE.MeshStandardMaterial({color:0x283846,roughness:.3}));top.position.set(0,1.38,-.25);g.add(top);g.position.set(p[0],0,p[1]);g.rotation.y=p[2];city.add(g);parkedCars.push(g)}
@@ -215,7 +232,20 @@ function addCityLifeProps(){
  for(let i=0;i<3;i++)box(127+i*10,-73,8,.7,.6,0xf0c84b);
  addNeonSign(-75,7,-245,17,2.3,0xff7055);addNeonSign(78,8,245,18,2.4,0x5cf0a6);addNeonSign(245,10,75,16,2.5,0x62a7ff);
  for(const x of [-210,-132,-54,24,102,180]){const mat=new THREE.MeshStandardMaterial({color:0x66dfff,emissive:0x1b83a8,emissiveIntensity:.45});const m=new THREE.Mesh(new THREE.BoxGeometry(11,2,.25),mat);m.position.set(x,4.5,-248);city.add(m);animatedSigns.push(mat)}
- for(const x of [-78,0,78])for(const z of [-78,0,78]){const pole=new THREE.Mesh(new THREE.BoxGeometry(.18,4.6,.18),new THREE.MeshStandardMaterial({color:0x313941}));pole.position.set(x+8,2.3,z+8);city.add(pole);const vMat=new THREE.MeshBasicMaterial({color:0x35db70}),hMat=new THREE.MeshBasicMaterial({color:0xff4f5f});const v=new THREE.Mesh(new THREE.SphereGeometry(.28,7,6),vMat);v.position.set(x+8,4.25,z+8);city.add(v);const h=new THREE.Mesh(new THREE.SphereGeometry(.28,7,6),hMat);h.position.set(x+8.7,4.25,z+8);city.add(h);trafficLights.push({vMat,hMat})}
+ const xNames={[-78]:'WEST AVE',[0]:'CENTRAL AVE',[78]:'EAST AVE'},zNames={[-78]:'3RD ST',[0]:'MAIN ST',[78]:'1ST ST'};
+ for(const x of [-78,0,78])for(const z of [-78,0,78]){
+  const metal=new THREE.MeshStandardMaterial({color:0x303841,metalness:.35,roughness:.6});
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.35,6.7,.35),metal);pole.position.set(x+9,3.35,z+9);city.add(pole);
+  const armX=new THREE.Mesh(new THREE.BoxGeometry(15,.28,.28),metal);armX.position.set(x+1.8,6.25,z+9);city.add(armX);
+  const armZ=new THREE.Mesh(new THREE.BoxGeometry(.28,.28,15),metal);armZ.position.set(x+9,6.25,z+1.8);city.add(armZ);
+  const vertical=makeSignalHead(x+1.8,5.2,z+8.65,0),horizontal=makeSignalHead(x+8.65,5.2,z+1.8,Math.PI/2);
+  addFlatSign(x-2.4,6.8,z+8.7,xNames[x],0,'#17613e',7.4,1.45);addFlatSign(x+8.7,6.8,z-2.4,zNames[z],Math.PI/2,'#17613e',7.4,1.45);
+  trafficLights.push({vertical,horizontal})
+ }
+ // roadside regulatory signs
+ for(const p of [[-210,-88,0,'SPEED 45'],[156,88,Math.PI,'SPEED 45'],[88,210,Math.PI/2,'ONE WAY'],[-88,-210,-Math.PI/2,'ONE WAY']]){
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.14,3.6,.14),new THREE.MeshStandardMaterial({color:0x777f86,metalness:.4,roughness:.55}));pole.position.set(p[0],1.8,p[1]);city.add(pole);addFlatSign(p[0],3.5,p[1],p[3],p[2],'#f4f6f7',5.6,1.65)
+ }
 }
 addCityLifeProps();
 function addServiceBuildings(){
@@ -489,8 +519,9 @@ function failDelivery(){popup('Delivery missed');activeJob=null;clearCheckpoints
 function reward(cash,rep){state.money+=cash;state.totalEarned+=cash;state.rep+=rep;renderHUD();sfx('reward')}
 function popup(text){const p=$('popup');p.textContent=text;p.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>p.classList.remove('show'),1600)}
 
-function trafficSignalAllows(vertical){const phase=(performance.now()/1000)%12;return vertical?phase<5.3:phase>6.2}
-function updateTrafficLights(){const verticalGreen=trafficSignalAllows(true);for(const l of trafficLights){l.vMat.color.setHex(verticalGreen?0x35db70:0xff4f5f);l.hMat.color.setHex(verticalGreen?0xff4f5f:0x35db70)}}
+function trafficSignalState(vertical){const phase=(performance.now()/1000)%12;if(vertical){if(phase<4.7)return 'green';if(phase<5.35)return 'yellow';return 'red'}if(phase>=6&&phase<10.7)return 'green';if(phase>=10.7&&phase<11.35)return 'yellow';return 'red'}
+function trafficSignalAllows(vertical){return trafficSignalState(vertical)==='green'}
+function updateTrafficLights(){const vs=trafficSignalState(true),hs=trafficSignalState(false);for(const l of trafficLights){setSignalHead(l.vertical,vs);setSignalHead(l.horizontal,hs)}}
 function trafficTargetPoint(t,node){const dx=node.x-t.node.x,dz=node.z-t.node.z,vertical=Math.abs(dz)>Math.abs(dx),lane=t.lane;return vertical?{x:node.x+(dz>0?lane:-lane),z:node.z,vertical:true}:{x:node.x,z:node.z+(dx>0?-lane:lane),vertical:false}}
 function chooseNextTrafficNode(t){const x=t.next.x,z=t.next.z,choices=[];for(const dx of [-STEP,STEP])if(roadCenters.includes(x+dx))choices.push({x:x+dx,z});for(const dz of [-STEP,STEP])if(roadCenters.includes(z+dz))choices.push({x,z:z+dz});const filtered=choices.filter(n=>!t.prev||n.x!==t.prev.x||n.z!==t.prev.z),pool=filtered.length?filtered:choices,next=pool[Math.floor(Math.random()*pool.length)];t.prev=t.node;t.node=t.next;t.next=next||t.prev;t.turnCooldown=.7}
 function makeTrafficMesh(type,color){
