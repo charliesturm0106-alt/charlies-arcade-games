@@ -66,7 +66,7 @@ const WORLD=470,ROAD=24,STEP=78;
 const roadCenters=[];for(let v=-234;v<=234;v+=STEP)roadCenters.push(v);
 const keys={up:false,down:false,left:false,right:false,hand:false};
 let running=false,last=performance.now(),toastTimer=0,currentPrompt=null,activeRace=null,activeJob=null,lastRaceConfig=null,steerTouch=0,touchSteer=false;
-let wantedHeat=0,peakWanted=0,chaseActive=false,escapeTimer=0,trafficHitCooldown=0,speedingTimer=0,damageCooldown=0,worldClock=.24;
+let wantedHeat=0,peakWanted=0,chaseActive=false,escapeTimer=0,trafficHitCooldown=0,speedingTimer=0,damageCooldown=0,worldClock=.24,roadblockTimer=0,roadblockLevel=0,chaseTime=0,backupPulse=0,policeNearest=999,policeEscapeNeed=0,lastPoliceLevel=0;
 const police=[],patrolPolice=[],roadblocks=[],rivals=[],streetLights=[],streetLightSources=[],trafficLights=[],roadZones=[],neonMaterials=[],animatedSigns=[],ramps=[],smoke=[],parkedCars=[];const remotePlayers=new Map();let jumpY=0,jumpVel=0,jumpPeak=0,jumpCooldown=0,lastZone='';
 let weatherState='CLEAR',nextWeatherAt=performance.now()+70000,rainPoints=null,rainPositions=null,nextFreeEventAt=performance.now()+30000,activeFreeEvent=null,gpsTarget=null,serviceBoostUntil=0,shineUntil=0;
 const MP_MAX_PLAYERS=6;let mpSendTimer=0;const mp={socket:null,connected:false,joined:false,room:'',id:'',name:'',server:'',players:1,intentionalClose:false};
@@ -674,16 +674,101 @@ function updatePlayer(dt){
 }
 
 function wantedLevel(){return wantedHeat<=0?0:Math.min(5,Math.ceil(wantedHeat/80))}
+function policeTargetCount(level){const desktop=[0,2,3,5,6,8],mobile=[0,2,3,4,5,6];return (PERF_MOBILE?mobile:desktop)[level]||0}
 function nearestRoadPoint(x,z){let bx=roadCenters[0],bz=roadCenters[0],dx=999,dz=999;for(const v of roadCenters){if(Math.abs(x-v)<dx){dx=Math.abs(x-v);bx=v}if(Math.abs(z-v)<dz){dz=Math.abs(z-v);bz=v}}return dx<dz?{x:bx,z,heading:0}:{x,z:bz,heading:Math.PI/2}}
 function createPatrolPolice(){const target=PERF_MOBILE?1:2;while(patrolPolice.length<target)patrolPolice.push(spawnTrafficAgent(true))}
 createPatrolPolice();
-function raiseWanted(amount){wantedHeat=clamp(wantedHeat+amount,0,400);peakWanted=Math.max(peakWanted,wantedLevel());if(!chaseActive){chaseActive=true;sfx('police');popup('🚓 POLICE CHASE')}syncPolice()}
-function syncPolice(){const need=wantedLevel();while(police.length<need){let p=null;if(patrolPolice.length){patrolPolice.sort((a,b)=>Math.hypot(a.mesh.position.x-player.pos.x,a.mesh.position.z-player.pos.z)-Math.hypot(b.mesh.position.x-player.pos.x,b.mesh.position.z-player.pos.z));p=patrolPolice.shift();p.speed=Math.max(12,p.speed)}if(!p){const rp=nearestRoadPoint(player.pos.x-Math.sin(player.heading)*(55+police.length*12),player.pos.z-Math.cos(player.heading)*(55+police.length*12)),m=makeCar(0xe9edf3,.86);m.position.set(rp.x,0,rp.z);scene.add(m);p={mesh:m,speed:14,heading:player.heading,accel:11,turnRate:1.55}}if(!p.accel){p.accel=11;p.turnRate=1.55;p.heading=p.mesh.rotation.y}police.push(p)}while(police.length>need){const p=police.pop();scene.remove(p.mesh)}if(need>=4)ensureRoadblock();else clearRoadblocks()}
-function clearPolice(){police.forEach(p=>scene.remove(p.mesh));police.length=0;clearRoadblocks()}
-function ensureRoadblock(){if(roadblocks.length)return;const ahead=90,rp=nearestRoadPoint(player.pos.x+Math.sin(player.heading)*ahead,player.pos.z+Math.cos(player.heading)*ahead),horizontal=Math.abs(Math.sin(player.heading))>.7;for(let i=-1;i<=1;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.2:7,1.2,horizontal?7:1.2),new THREE.MeshStandardMaterial({color:i===0?0xffd94e:0xe9edf3,roughness:.7}));b.position.set(rp.x+(horizontal?0:i*5.8),.6,rp.z+(horizontal?i*5.8:0));scene.add(b);roadblocks.push({mesh:b,x:b.position.x,z:b.position.z,r:3.8})}popup('🚧 POLICE ROADBLOCK AHEAD')}
-function clearRoadblocks(){roadblocks.forEach(b=>scene.remove(b.mesh));roadblocks.length=0}
+function policeRoleFor(index){return index%4===1?'interceptor':index%4===2?'rammer':'pursuit'}
+function policeSpawnPoint(index,role){
+ const lvl=Math.max(1,wantedLevel()),fx=Math.sin(player.heading),fz=Math.cos(player.heading),sx=Math.sin(player.heading+Math.PI/2),sz=Math.cos(player.heading+Math.PI/2);
+ let forward=-52-index*7,lateral=(index%2?1:-1)*(14+(index%3)*7);
+ if(role==='interceptor'){forward=92+lvl*11+(index%2)*20;lateral=(index%2?1:-1)*(12+lvl*3)}
+ else if(role==='rammer'){forward=-32-index*3;lateral=(index%2?1:-1)*(24+lvl*2)}
+ const tx=clamp(player.pos.x+fx*forward+sx*lateral,-WORLD+20,WORLD-20),tz=clamp(player.pos.z+fz*forward+sz*lateral,-WORLD+20,WORLD-20);
+ return nearestRoadPoint(tx,tz)
+}
+function configurePoliceUnit(p,index){
+ const lvl=Math.max(1,wantedLevel()),role=policeRoleFor(index);
+ p.role=role;p.accel=16+lvl*2+(role==='rammer'?3:0);p.turnRate=1.95+lvl*.14+(role==='interceptor'?.18:0);p.heading=Number.isFinite(p.heading)?p.heading:player.heading;p.speed=Math.max(15,p.speed||0);p.stuck=0;p.hitCooldown=0;p.repositionCooldown=0;p.lastX=p.mesh.position.x;p.lastZ=p.mesh.position.z;p.mesh.userData.pursuitRole=role;return p
+}
+function raiseWanted(amount){
+ const before=wantedLevel();wantedHeat=clamp(wantedHeat+amount,0,400);const after=wantedLevel();peakWanted=Math.max(peakWanted,after);
+ if(!chaseActive){chaseActive=true;chaseTime=0;backupPulse=0;escapeTimer=0;lastPoliceLevel=after;sfx('police');popup('🚓 POLICE CHASE · '+after+'★')}
+ else if(after>before){popup('🚓 BACKUP EN ROUTE · '+after+'★');sfx('police')}
+ syncPolice()
+}
+function syncPolice(){
+ const lvl=wantedLevel(),need=policeTargetCount(lvl);
+ while(police.length<need){
+  const index=police.length,role=policeRoleFor(index);let p=null;
+  if(patrolPolice.length&&index<2){patrolPolice.sort((a,b)=>Math.hypot(a.mesh.position.x-player.pos.x,a.mesh.position.z-player.pos.z)-Math.hypot(b.mesh.position.x-player.pos.x,b.mesh.position.z-player.pos.z));p=patrolPolice.shift()}
+  if(!p){const rp=policeSpawnPoint(index,role),m=makeCar(role==='interceptor'?0xdde7f2:0xe9edf3,.86);m.position.set(rp.x,0,rp.z);m.rotation.y=player.heading;scene.add(m);p={mesh:m,speed:16,heading:player.heading}}
+  police.push(configurePoliceUnit(p,index))
+ }
+ while(police.length>need){const p=police.pop();scene.remove(p.mesh)}
+ if(lvl>=3){if(roadblockLevel!==lvl)ensureRoadblocks(true);else ensureRoadblocks(false)}else clearRoadblocks();
+ lastPoliceLevel=lvl
+}
+function clearPolice(){police.forEach(p=>scene.remove(p.mesh));police.length=0;clearRoadblocks();policeNearest=999;lastPoliceLevel=0;roadblockTimer=0;roadblockLevel=0}
+function addRoadblock(distance,setIndex=0){
+ const lvl=wantedLevel(),fx=Math.sin(player.heading),fz=Math.cos(player.heading),sx=Math.sin(player.heading+Math.PI/2),sz=Math.cos(player.heading+Math.PI/2),side=setIndex?(setIndex%2?13:-13):0;
+ const rp=nearestRoadPoint(clamp(player.pos.x+fx*distance+sx*side,-WORLD+20,WORLD-20),clamp(player.pos.z+fz*distance+sz*side,-WORLD+20,WORLD-20)),horizontal=Math.abs(Math.sin(player.heading))>.7,blockHeading=horizontal?0:Math.PI/2;
+ for(const lane of [-1,1]){
+  const m=makeCar(0xe9edf3,.82);m.position.set(rp.x+(horizontal?0:lane*5.8),0,rp.z+(horizontal?lane*5.8:0));m.rotation.y=blockHeading;scene.add(m);roadblocks.push({mesh:m,x:m.position.x,z:m.position.z,r:4.6,type:'car',cooldown:0})
+ }
+ const center=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.3:6.5,.9,horizontal?6.5:1.3),new THREE.MeshStandardMaterial({color:0xffd94e,roughness:.72,metalness:.08}));center.position.set(rp.x,.45,rp.z);center.rotation.y=blockHeading;scene.add(center);roadblocks.push({mesh:center,x:rp.x,z:rp.z,r:3.8,type:'barrier',cooldown:0});
+ if(lvl>=4){const strip=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.1:17,.08,horizontal?17:1.1),new THREE.MeshStandardMaterial({color:0x20242b,roughness:.95}));strip.position.set(rp.x,.07,rp.z);scene.add(strip);roadblocks.push({mesh:strip,x:rp.x,z:rp.z,r:8.2,type:'strip',cooldown:0})}
+}
+function ensureRoadblocks(force=false){
+ const lvl=wantedLevel();if(lvl<3)return;
+ if(roadblocks.length&&!force)return;
+ clearRoadblocks();roadblockLevel=lvl;addRoadblock(105,0);if(lvl>=5)addRoadblock(182,1);roadblockTimer=Math.max(8,16-lvl*1.4);popup(lvl>=5?'🚧 MULTIPLE ROADBLOCKS AHEAD':'🚧 POLICE ROADBLOCK AHEAD')
+}
+function clearRoadblocks(){roadblocks.forEach(b=>scene.remove(b.mesh));roadblocks.length=0;roadblockLevel=0}
+function updateRoadblocks(dt,lvl){
+ if(lvl<3){if(roadblocks.length)clearRoadblocks();return}
+ roadblockTimer-=dt;let nearest=999;for(const b of roadblocks){b.cooldown=Math.max(0,(b.cooldown||0)-dt);nearest=Math.min(nearest,Math.hypot(player.pos.x-b.x,player.pos.z-b.z));if(Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<b.r&&b.cooldown<=0){b.cooldown=1.1;const hit=b.type==='strip'?10:18+lvl*2;addDamage(hit);player.speed*=b.type==='strip'?.38:-.12;wantedHeat=clamp(wantedHeat+8+lvl*2,0,400);sfx('hit')}}
+ if((!roadblocks.length)||(roadblockTimer<=0&&nearest>58))ensureRoadblocks(true)
+}
 function updatePatrolPolice(dt){if(chaseActive)return;for(const p of patrolPolice)updateTrafficAgent(p,dt)}
-function updatePolice(dt){if(!chaseActive){updatePatrolPolice(dt);return}syncPolice();let nearest=999;for(const p of police){const dx=player.pos.x-p.mesh.position.x,dz=player.pos.z-p.mesh.position.z,d=Math.hypot(dx,dz);nearest=Math.min(nearest,d);const desired=Math.atan2(dx,dz),error=angleDiff(desired,p.heading);let targetSpeed=17+wantedLevel()*3;if(Math.abs(error)>.7)targetSpeed*=.65;else if(Math.abs(error)>.4)targetSpeed*=.8;p.speed=lerp(p.speed,targetSpeed,clamp(dt*(p.speed>targetSpeed?2.4:1.3),0,1));p.heading+=clamp(error,-p.turnRate*dt,p.turnRate*dt);const nx=p.mesh.position.x+Math.sin(p.heading)*p.speed*dt,nz=p.mesh.position.z+Math.cos(p.heading)*p.speed*dt;if(!collisionAt(nx,nz)){p.mesh.position.x=nx;p.mesh.position.z=nz}else p.heading+=.65;p.mesh.rotation.y=p.heading;p.mesh.userData.wheels?.forEach(w=>w.rotation.x-=p.speed*dt*.8);if(d<4.5){player.speed*=Math.pow(.74,dt*10);addDamage(4)}}for(const b of roadblocks){if(Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<4.2){addDamage(12);player.speed*=-.18}}if(nearest>48){escapeTimer+=dt;wantedHeat=Math.max(0,wantedHeat-dt*(10+wantedLevel()))}else{escapeTimer=0;wantedHeat=Math.max(1,wantedHeat-dt*1.2)}if(wantedHeat<=0){const rewardCash=450+peakWanted*500,rewardRep=35+peakWanted*28;reward(rewardCash,rewardRep);state.escapes++;popup('🚓 ESCAPED · reward '+rewardCash+' · +'+rewardRep+' REP');chaseActive=false;peakWanted=0;escapeTimer=0;clearPolice();createPatrolPolice();save()}}
+function updatePolice(dt){
+ if(!chaseActive){updatePatrolPolice(dt);return}
+ chaseTime+=dt;syncPolice();const lvl=Math.max(1,wantedLevel()),fx=Math.sin(player.heading),fz=Math.cos(player.heading),sx=Math.sin(player.heading+Math.PI/2),sz=Math.cos(player.heading+Math.PI/2),playerSpeed=Math.abs(player.speed);
+ let nearest=999;
+ for(let i=0;i<police.length;i++){
+  const p=police[i];p.hitCooldown=Math.max(0,(p.hitCooldown||0)-dt);p.repositionCooldown=Math.max(0,(p.repositionCooldown||0)-dt);
+  const dx=player.pos.x-p.mesh.position.x,dz=player.pos.z-p.mesh.position.z,d=Math.hypot(dx,dz);nearest=Math.min(nearest,d);
+  const lead=p.role==='interceptor'?1.15+lvl*.08:p.role==='rammer'?.38:.62+lvl*.05;
+  let tx=player.pos.x+fx*playerSpeed*lead,tz=player.pos.z+fz*playerSpeed*lead;
+  if(p.role==='interceptor'){const side=(i%2?1:-1)*(7+lvl*2);tx+=sx*side;tz+=sz*side}
+  if(p.role==='rammer'&&d<18){tx=player.pos.x;tz=player.pos.z}
+  const desired=Math.atan2(tx-p.mesh.position.x,tz-p.mesh.position.z),error=angleDiff(desired,p.heading);
+  let targetSpeed=Math.max(25+lvl*4.5,playerSpeed*(1.06+lvl*.035)+(p.role==='interceptor'?8:p.role==='rammer'?6:4));
+  if(d>95)targetSpeed*=1.12;if(d<11)targetSpeed=Math.max(17,playerSpeed*.88+4);targetSpeed=clamp(targetSpeed,18,92);
+  if(Math.abs(error)>.95)targetSpeed*=.78;else if(Math.abs(error)>.55)targetSpeed*=.9;
+  p.speed=lerp(p.speed,targetSpeed,clamp(dt*(p.speed>targetSpeed?3.0:1.9+p.accel*.025),0,1));
+  p.heading+=clamp(error,-p.turnRate*dt,p.turnRate*dt);
+  const oldX=p.mesh.position.x,oldZ=p.mesh.position.z,nx=oldX+Math.sin(p.heading)*p.speed*dt,nz=oldZ+Math.cos(p.heading)*p.speed*dt;
+  if(!collisionAt(nx,nz)){p.mesh.position.x=nx;p.mesh.position.z=nz;p.stuck=Math.max(0,(p.stuck||0)-dt*2)}
+  else{p.stuck=(p.stuck||0)+dt;p.heading+=(i%2?1:-1)*(1.05+lvl*.08);p.speed*=.72}
+  const moved=Math.hypot(p.mesh.position.x-oldX,p.mesh.position.z-oldZ);if(moved<.06&&p.speed>12)p.stuck=(p.stuck||0)+dt*.7;
+  if((p.stuck||0)>1.6&&d>42&&p.repositionCooldown<=0){const rp=policeSpawnPoint(i,p.role);p.mesh.position.set(rp.x,0,rp.z);p.heading=player.heading;p.speed=Math.max(20,playerSpeed*.72);p.stuck=0;p.repositionCooldown=5}
+  p.mesh.rotation.y=p.heading;p.mesh.userData.wheels?.forEach(w=>w.rotation.x-=p.speed*dt*.8);
+  if(d<5.4&&p.hitCooldown<=0){p.hitCooldown=.42;player.speed*=Math.max(.5,.76-lvl*.035);if(lvl>=3)player.heading+=angleDiff(p.heading,player.heading)*.09*lvl;addDamage(3+lvl*1.5);wantedHeat=clamp(wantedHeat+4+lvl,0,400);sfx('hit')}
+ }
+ updateRoadblocks(dt,lvl);policeNearest=nearest;
+ const escapeDistance=82+lvl*9,required=7+lvl*2.2;policeEscapeNeed=required;
+ if(nearest>escapeDistance){
+  escapeTimer+=dt;backupPulse=Math.max(0,backupPulse-dt);
+  if(escapeTimer>required)wantedHeat=Math.max(0,wantedHeat-dt*(8+lvl*1.7))
+ }else{
+  escapeTimer=Math.max(0,escapeTimer-dt*2.8);backupPulse+=dt;
+  if(nearest<34)wantedHeat=clamp(wantedHeat+dt*(.75+lvl*.42),0,400);else wantedHeat=Math.max(1,wantedHeat-dt*.12);
+  const waveTime=Math.max(17,28-lvl*2);if(backupPulse>waveTime&&wantedHeat<400){backupPulse=0;const before=wantedLevel();wantedHeat=clamp(wantedHeat+10+lvl*4,0,400);const after=wantedLevel();if(after>before){popup('🚓 PURSUIT ESCALATED · '+after+'★');sfx('police')}}
+ }
+ peakWanted=Math.max(peakWanted,wantedLevel());
+ if(wantedHeat<=0){const rewardCash=700+peakWanted*650,rewardRep=45+peakWanted*36;reward(rewardCash,rewardRep);state.escapes++;popup('🚓 ESCAPED · reward '+rewardCash+' · +'+rewardRep+' REP');chaseActive=false;peakWanted=0;escapeTimer=0;chaseTime=0;backupPulse=0;clearPolice();createPatrolPolice();save()}
+}
 const driftZone={x1:-55,x2:55,z1:-250,z2:-218},speedTrap={x:234,z:156,need:85};let speedCooldown=0;
 function clearFreeEvent(){if(activeFreeEvent&&activeFreeEvent.mesh)scene.remove(activeFreeEvent.mesh);if(gpsTarget&&gpsTarget.type==='event'){gpsTarget=null;$('gpsLabel').textContent='GPS: NONE'}activeFreeEvent=null;nextFreeEventAt=performance.now()+45000+Math.random()*65000}
 function spawnFreeEvent(){if(activeRace||activeJob||chaseActive||activeFreeEvent)return;const roll=Math.random();if(roll<.34){const x=roadCenters[Math.floor(Math.random()*roadCenters.length)],z=roadCenters[Math.floor(Math.random()*roadCenters.length)],g=new THREE.Mesh(new THREE.TorusGeometry(5,.65,10,24),new THREE.MeshBasicMaterial({color:0x6dff9c}));g.rotation.x=Math.PI/2;g.position.set(x,.5,z);scene.add(g);activeFreeEvent={type:'stash',x,z,mesh:g,expires:performance.now()+50000,reward:900+Math.floor(Math.random()*1300)};gpsTarget={x,z,label:'CASH STASH',type:'event'};$('gpsLabel').textContent='GPS: CASH STASH';popup('💵 Hidden cash appeared · GPS set')}else if(roll<.67){const target=75+Math.floor(Math.random()*35);activeFreeEvent={type:'speed',target,expires:performance.now()+35000,reward:1400};popup('⚡ STREET EVENT · Hit '+target+' MPH')}else{const target=120+Math.floor(Math.random()*120);activeFreeEvent={type:'drift',target,expires:performance.now()+40000,reward:1600};popup('💨 STREET EVENT · Drift '+target)}}
@@ -719,7 +804,7 @@ function districtName(){
  return 'MIDTOWN';
 }
 function renderHUD(){$('speed').textContent=Math.floor(Math.abs(player.speed)*2.23694);$('money').textContent=String.fromCharCode(36)+Math.floor(state.money).toLocaleString();$('rep').textContent=state.rep.toLocaleString();const zn=districtName();$('zone').textContent=zn;if(zn!==lastZone){lastZone=zn}const wl=wantedLevel();$('wanted').textContent='WANTED '+('★'.repeat(wl)+'☆'.repeat(5-wl));$('wanted').classList.toggle('hot',wl>0);$('missionBar').style.width=activeRace?Math.min(100,playerRaceProgress()/activeRace.metrics.total*100)+'%':activeJob?Math.max(0,100-((performance.now()-activeJob.start)/1000)/activeJob.timeLimit*100)+'%':Math.min(100,state.rep/1800*100)+'%'}
-function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1),target=activeRace.route[cp],cpDist=target?Math.round(Math.hypot(player.pos.x-target[0],player.pos.z-target[1])):0,elapsed=activeRace.phase==='racing'?((performance.now()-activeRace.start)/1000):0,lastSplit=activeRace.lastSplitTime?(' · SPLIT '+activeRace.lastSplitTime.toFixed(1)+'s'):'';$('missionType').textContent=activeRace.phase==='countdown'?'RACE · '+(activeRace.difficulty?.label||'NORMAL')+' · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1)+' · '+elapsed.toFixed(1)+'s';$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'NEXT '+cpDist+'m'+lastSplit+' · '+(activeRace.difficulty?.label||'NORMAL')+' · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE';$('missionTitle').textContent='Lose the police';$('missionText').textContent='Create distance until your wanted level cools down.'}else if(activeFreeEvent){$('missionType').textContent='STREET EVENT';$('missionTitle').textContent=activeFreeEvent.type==='stash'?'Find the cash stash':activeFreeEvent.type==='speed'?'Speed Challenge':'Drift Challenge';$('missionText').textContent=activeFreeEvent.type==='stash'?'Follow GPS to the green stash.':activeFreeEvent.type==='speed'?'Hit '+activeFreeEvent.target+' MPH before time expires.':'Build a '+activeFreeEvent.target+' drift score.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City 1.2.2';$('missionText').textContent='FULL RELEASE · racing · city life · police · weather · career · customization · GPS'}}
+function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1),target=activeRace.route[cp],cpDist=target?Math.round(Math.hypot(player.pos.x-target[0],player.pos.z-target[1])):0,elapsed=activeRace.phase==='racing'?((performance.now()-activeRace.start)/1000):0,lastSplit=activeRace.lastSplitTime?(' · SPLIT '+activeRace.lastSplitTime.toFixed(1)+'s'):'';$('missionType').textContent=activeRace.phase==='countdown'?'RACE · '+(activeRace.difficulty?.label||'NORMAL')+' · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1)+' · '+elapsed.toFixed(1)+'s';$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'NEXT '+cpDist+'m'+lastSplit+' · '+(activeRace.difficulty?.label||'NORMAL')+' · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE · '+wantedLevel()+'★';$('missionTitle').textContent=escapeTimer>0?'Police searching':'Pursuit locked on';$('missionText').textContent=escapeTimer>0?'Stay clear for '+Math.ceil(Math.max(0,policeEscapeNeed-escapeTimer))+'s · '+police.length+' units active':'Break line of sight · '+police.length+' units active · roadblocks begin at 3★'}else if(activeFreeEvent){$('missionType').textContent='STREET EVENT';$('missionTitle').textContent=activeFreeEvent.type==='stash'?'Find the cash stash':activeFreeEvent.type==='speed'?'Speed Challenge':'Drift Challenge';$('missionText').textContent=activeFreeEvent.type==='stash'?'Follow GPS to the green stash.':activeFreeEvent.type==='speed'?'Hit '+activeFreeEvent.target+' MPH before time expires.':'Build a '+activeFreeEvent.target+' drift score.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City 1.3';$('missionText').textContent='PURSUIT UPDATE · smarter police · interceptors · roadblocks · racing · multiplayer · career'}}
 function updateGPSLabel(){
  if(activeRace){const idx=Math.min(activeRace.index,activeRace.route.length-1),p=activeRace.route[idx],dist=Math.round(Math.hypot(p[0]-player.pos.x,p[1]-player.pos.z)),bearing=Math.atan2(p[0]-player.pos.x,p[1]-player.pos.z),rel=angleDiff(bearing,player.heading),dirs=['↑','↗','→','↘','↓','↙','←','↖'],arrow=dirs[(Math.round(rel/(Math.PI/4))+8)%8];$('gpsLabel').textContent='RACE '+arrow+' CP '+idx+'/'+(activeRace.route.length-1)+' · '+dist+'m';return}
  if(!gpsTarget){$('gpsLabel').textContent='GPS: NONE';return}const gx=gpsTarget.x??player.pos.x,gz=gpsTarget.z??player.pos.z,dist=Math.round(Math.hypot(gx-player.pos.x,gz-player.pos.z)),bearing=Math.atan2(gx-player.pos.x,gz-player.pos.z),rel=angleDiff(bearing,player.heading),dirs=['↑','↗','→','↘','↓','↙','←','↖'],arrow=dirs[(Math.round(rel/(Math.PI/4))+8)%8];$('gpsLabel').textContent='GPS '+arrow+' '+(gpsTarget.label||'DESTINATION')+' · '+dist+'m';if(dist<12&&gpsTarget.type!=='event'){popup('📍 Destination reached');gpsTarget=null;$('gpsLabel').textContent='GPS: NONE'}
