@@ -42,7 +42,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   <div class="overlay" id="overlay">
     <div class="panel">
       <h2 id="title">Ski Rush</h2>
-      <p id="message"><b>A/D or ←/→</b> carve. <b>W/↑</b> tucks for more speed. <b>S/↓</b> brakes. Hit the blue/red slalom gates, avoid trees and rocks, and press <b>Space</b> in the air to throw tricks.</p>
+      <p id="message"><b>A/D or ←/→</b> carve. <b>W/↑</b> tucks for more speed. <b>S/↓</b> brakes. Hit every blue/red slalom gate — <b>miss one and the run restarts</b>. Avoid trees and rocks, and press <b>Space</b> in the air to throw tricks.</p>
       <button class="primary" id="start">Start Run</button>
     </div>
   </div>
@@ -230,8 +230,9 @@ function update(dt){
         combo=Math.min(8,combo+1);
         showMessage('GATE +'+250*(combo-1),.55);
       }else{
-        combo=1;
-        showMessage('MISSED GATE',.65);
+        reset();
+        showMessage('MISSED GATE — RESTART!',.9);
+        return;
       }
     }
 
