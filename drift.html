@@ -73,13 +73,14 @@ let bestGhost=[];
 try{bestGhost=JSON.parse(localStorage.getItem('drift_best_ghost')||'[]')}catch(e){bestGhost=[]}
 let currentGhost=[],ghostTimer=0;
 
-const car={x:450,y:548,angle:Math.PI,vx:0,vy:0,w:24,h:42};
+const car={x:450,y:548,angle:Math.PI/2,vx:0,vy:0,w:24,h:42};
 const checkpoints=[
-  {x:760,y:250,w:95,h:150,label:'1'},
-  {x:400,y:70,w:100,h:95,label:'2'},
-  {x:45,y:250,w:95,h:150,label:'3'},
-  {x:395,y:515,w:110,h:95,label:'START'}
+  {x:665,y:282,w:190,h:86,label:'CP 1',orientation:'horizontal'},
+  {x:407,y:38,w:86,h:172,label:'CP 2',orientation:'vertical'},
+  {x:45,y:282,w:190,h:86,label:'CP 3',orientation:'horizontal'},
+  {x:407,y:440,w:86,h:172,label:'START',orientation:'vertical'}
 ];
+let checkpointInside=false;
 
 function fmt(ms){
   if(!ms)return '--:--.---';
@@ -96,11 +97,11 @@ function hud(){
 }
 
 function resetCar(){
-  car.x=450;car.y=548;car.angle=Math.PI;car.vx=0;car.vy=0;
+  car.x=450;car.y=548;car.angle=Math.PI/2;car.vx=0;car.vy=0;
 }
 
 function start(){
-  mode='countdown';countdown=3;raceTime=0;lapStart=0;lap=1;nextCP=0;
+  mode='countdown';countdown=3;raceTime=0;lapStart=0;lap=1;nextCP=0;checkpointInside=false;
   driftCombo=0;driftBank=0;drifting=false;marks=[];sparks=[];currentGhost=[];ghostTimer=0;
   resetCar();
   $('overlay').hidden=true;
@@ -123,29 +124,44 @@ function ellipseValue(x,y,rx,ry){
 function isTrack(x,y){
   return ellipseValue(x,y,405,285)<=1 && ellipseValue(x,y,222,120)>=1;
 }
-function inRect(p,r){return p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h}
+function inRect(p,r){
+  return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
+}
 
 function crossCheckpoints(){
   const cp=checkpoints[nextCP];
-  if(inRect(car,cp)){
+  const inside=inRect(car,cp);
+
+  if(inside&&!checkpointInside){
+    checkpointInside=true;
+
     if(nextCP===3){
       const lapMs=raceTime-lapStart;
-      if(lapMs>5000){
+      if(lapMs>3500){
         if(!bestLap||lapMs<bestLap){
           bestLap=lapMs;
           localStorage.setItem('drift_best_lap',bestLap);
           bestGhost=currentGhost.slice();
           localStorage.setItem('drift_best_ghost',JSON.stringify(bestGhost));
         }
+
         lap++;
         lapStart=raceTime;
         currentGhost=[];
         ghostTimer=0;
-        if(lap>3){finishRace();return}
+        nextCP=0;
+
+        if(lap>3){
+          finishRace();
+          return;
+        }
       }
-      nextCP=0;
-    }else nextCP++;
+    }else{
+      nextCP++;
+    }
   }
+
+  if(!inside) checkpointInside=false;
 }
 
 function updatePhysics(dt){
@@ -258,12 +274,39 @@ function drawTrack(){
   }
 
   checkpoints.forEach((cp,i)=>{
-    if(i===nextCP&&mode==='race'){
-      ctx.fillStyle='rgba(255,204,68,.12)';
-      ctx.fillRect(cp.x,cp.y,cp.w,cp.h);
-      ctx.strokeStyle='rgba(255,204,68,.75)';
-      ctx.lineWidth=2;ctx.strokeRect(cp.x,cp.y,cp.w,cp.h);
+    const active=i===nextCP&&mode==='race';
+
+    ctx.save();
+    ctx.fillStyle=active?'rgba(255,204,68,.17)':'rgba(255,255,255,.035)';
+    ctx.fillRect(cp.x,cp.y,cp.w,cp.h);
+
+    ctx.strokeStyle=active?'#ffd54a':'rgba(255,255,255,.12)';
+    ctx.lineWidth=active?5:2;
+    ctx.setLineDash(active?[12,8]:[6,10]);
+
+    if(cp.orientation==='horizontal'){
+      const gy=cp.y+cp.h/2;
+      ctx.beginPath();
+      ctx.moveTo(cp.x,gy);
+      ctx.lineTo(cp.x+cp.w,gy);
+      ctx.stroke();
+    }else{
+      const gx=cp.x+cp.w/2;
+      ctx.beginPath();
+      ctx.moveTo(gx,cp.y);
+      ctx.lineTo(gx,cp.y+cp.h);
+      ctx.stroke();
     }
+
+    ctx.setLineDash([]);
+    if(active){
+      ctx.fillStyle='#ffd54a';
+      ctx.font='900 14px system-ui';
+      ctx.textAlign='center';
+      ctx.fillText(cp.label,cp.x+cp.w/2,cp.y+cp.h/2-12);
+      ctx.textAlign='left';
+    }
+    ctx.restore();
   });
 }
 
