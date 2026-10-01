@@ -62,6 +62,26 @@
   .btn:hover {
     background: rgba(0,255,255,0.2);
   }
+
+  .difficulty {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .diff-btn {
+    padding: 6px 10px;
+    border: 2px solid #f0f;
+    background: rgba(0,0,0,0.5);
+    color: #f0f;
+    cursor: pointer;
+    font-size: 10px;
+    box-shadow: 0 0 10px #f0f;
+  }
+
+  .diff-btn:hover {
+    background: rgba(255,0,255,0.2);
+  }
 </style>
 </head>
 
@@ -70,7 +90,14 @@
 <div class="start-screen" id="startScreen">
   <h1>NEON DINO RUN</h1>
   <p>Press SPACE to jump</p>
-  <p>Press START to begin</p>
+  <p>Select difficulty:</p>
+
+  <div class="difficulty">
+    <div class="diff-btn" data-diff="easy">Easy</div>
+    <div class="diff-btn" data-diff="medium">Medium</div>
+    <div class="diff-btn" data-diff="hard">Hard</div>
+  </div>
+
   <div class="btn" id="startBtn">START</div>
 </div>
 
@@ -90,8 +117,16 @@ let highscore = localStorage.getItem("hs_dino") || 0;
 document.getElementById("highscore").innerText = highscore;
 
 let running = false;
+let difficulty = "medium";
 
-/* Neon Dino sprite (pixel art drawn manually) */
+/* Difficulty settings */
+const DIFF = {
+  easy:   { speed: 6, spawn: 0.015 },
+  medium: { speed: 8, spawn: 0.02 },
+  hard:   { speed: 11, spawn: 0.035 }
+};
+
+/* Neon Dino sprite (more detailed) */
 function drawDino(x, y, frame) {
   ctx.save();
   ctx.translate(x, y);
@@ -101,30 +136,37 @@ function drawDino(x, y, frame) {
   ctx.fillStyle = "#0ff";
 
   // Body
-  ctx.fillRect(0, 10, 40, 20);
+  ctx.fillRect(0, 10, 45, 22);
+
+  // Tail spikes
+  ctx.fillRect(-10, 15, 10, 5);
+  ctx.fillRect(-15, 20, 10, 5);
 
   // Head
-  ctx.fillRect(30, 0, 20, 20);
+  ctx.fillRect(35, -5, 25, 25);
 
   // Eye
   ctx.fillStyle = "#f0f";
-  ctx.fillRect(42, 6, 6, 6);
+  ctx.fillRect(50, 5, 6, 6);
 
+  // Mouth
   ctx.fillStyle = "#0ff";
+  ctx.fillRect(45, 15, 15, 4);
 
   // Legs (animated)
+  ctx.fillStyle = "#0ff";
   if (frame % 20 < 10) {
-    ctx.fillRect(5, 30, 10, 10);
-    ctx.fillRect(25, 30, 10, 10);
+    ctx.fillRect(5, 32, 12, 12);
+    ctx.fillRect(25, 32, 12, 12);
   } else {
-    ctx.fillRect(10, 30, 10, 10);
-    ctx.fillRect(30, 30, 10, 10);
+    ctx.fillRect(10, 32, 12, 12);
+    ctx.fillRect(30, 32, 12, 12);
   }
 
   ctx.restore();
 }
 
-/* Neon cactus obstacle */
+/* Neon cactus obstacle (more detailed) */
 function drawCactus(x, y) {
   ctx.save();
   ctx.translate(x, y);
@@ -132,14 +174,21 @@ function drawCactus(x, y) {
   ctx.shadowBlur = 20;
   ctx.fillStyle = "#f0f";
 
-  ctx.fillRect(0, 0, 20, 40);
-  ctx.fillRect(20, 10, 10, 20);
-  ctx.fillRect(-10, 10, 10, 20);
+  // Main body
+  ctx.fillRect(0, 0, 25, 50);
+
+  // Arms
+  ctx.fillRect(25, 10, 12, 25);
+  ctx.fillRect(-12, 10, 12, 25);
+
+  // Spikes
+  ctx.fillRect(5, -5, 5, 10);
+  ctx.fillRect(15, -5, 5, 10);
 
   ctx.restore();
 }
 
-/* Parallax neon ground */
+/* Neon ground */
 function drawGround() {
   ctx.strokeStyle = "#0ff";
   ctx.lineWidth = 3;
@@ -147,8 +196,8 @@ function drawGround() {
   ctx.shadowBlur = 15;
 
   ctx.beginPath();
-  ctx.moveTo(0, 250);
-  ctx.lineTo(900, 250);
+  ctx.moveTo(0, 260);
+  ctx.lineTo(900, 260);
   ctx.stroke();
 }
 
@@ -186,20 +235,20 @@ function update() {
   drawDino(dino.x, dino.y, frame);
 
   // Spawn cactus
-  if (Math.random() < 0.02) {
+  if (Math.random() < DIFF[difficulty].spawn) {
     obstacles.push({ x: 900, y: 210 });
   }
 
   // Move + draw obstacles
   obstacles.forEach(o => {
-    o.x -= 8;
+    o.x -= DIFF[difficulty].speed;
     drawCactus(o.x, o.y);
 
     // Collision
     if (
-      dino.x + 40 > o.x &&
-      dino.x < o.x + 20 &&
-      dino.y + 40 > o.y
+      dino.x + 45 > o.x &&
+      dino.x < o.x + 25 &&
+      dino.y + 45 > o.y
     ) {
       running = false;
       localStorage.setItem("hs_dino", highscore);
@@ -225,17 +274,26 @@ function update() {
 /* Jump */
 function jump() {
   if (!dino.jumping) {
-    dino.dy = -12;
+    dino.dy = -13;
     dino.jumping = true;
   }
 }
 
 /* Controls */
 document.addEventListener("keydown", e => {
+  e.preventDefault();   // ⭐ FIX: stops page from moving
+
   if (e.key === " " || e.key === "Spacebar") {
     if (!running) startGame();
     jump();
   }
+});
+
+/* Difficulty buttons */
+document.querySelectorAll(".diff-btn").forEach(btn => {
+  btn.onclick = () => {
+    difficulty = btn.dataset.diff;
+  };
 });
 
 /* Start game */
