@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
+  background:linear-gradient(135deg,#063f30,#0b5a40 55%,#05291f)
+}
+.top{padding:20px}
+a{color:white;text-decoration:none}
+canvas{
+  width:min(92vw,400px);height:auto;background:#0a2e24;
+  border:3px solid rgba(255,255,255,.2);border-radius:20px;
+  box-shadow:0 18px 45px rgba(0,0,0,.28)
+}
+.controls{
+  display:grid;grid-template-columns:70px 70px 70px;gap:8px;
+  justify-content:center;margin:18px auto 30px
+}
+.controls button{
+  height:60px;border:0;border-radius:15px;background:#2ad06b;color:white;
+  font-size:28px;font-weight:bold
+}
+.controls button:active{filter:brightness(.9)}
+.blank{visibility:hidden}
+#message{min-height:25px;color:#d8ffe5}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="index.html">← Back to Arcade</a>
+  <h1>🐍 Snake</h1>
+  <h2 id="score">Score: 0</h2>
+</div>
+
+<canvas id="game" width="400" height="400"></canvas>
+<p id="message">WASD / Arrow Keys / Touch</p>
+
+<div class="controls">
+  <button class="blank" type="button"></button>
+  <button id="up" type="button">▲</button>
+  <button class="blank" type="button"></button>
+  <button id="left" type="button">◀</button>
+  <button id="down" type="button">▼</button>
+  <button id="right" type="button">▶</button>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const scoreText=document.getElementById("score");
+const message=document.getElementById("message");
+
+const CELL=20;
+const SIZE=400;
+
+let snake=[];
+let dx=CELL,dy=0,nextDx=CELL,nextDy=0;
+let food={x:100,y:100};
+let score=0;
+let gameOver=false;
+
+function makeFood(){
+  let f;
+  do{
+    f={
+      x:Math.floor(Math.random()*(SIZE/CELL))*CELL,
+      y:Math.floor(Math.random()*(SIZE/CELL))*CELL
+    };
+  }while(snake.some(p=>p.x===f.x&&p.y===f.y));
+  return f;
+}
+
+function reset(){
+  snake=[
+    {x:200,y:200},
+    {x:180,y:200},
+    {x:160,y:200}
+  ];
+  dx=CELL;dy=0;nextDx=CELL;nextDy=0;
+  score=0;gameOver=false;
+  food=makeFood();
+  scoreText.textContent="Score: 0";
+  message.textContent="WASD / Arrow Keys / Touch";
+  draw();
+}
+
+function setDirection(x,y){
+  if(gameOver){
+    reset();
+    return;
+  }
+  if(x===-dx&&y===-dy)return;
+  nextDx=x;
+  nextDy=y;
+}
+
+function update(){
+  if(gameOver)return;
+
+  dx=nextDx;
+  dy=nextDy;
+
+  const head={x:snake[0].x+dx,y:snake[0].y+dy};
+
+  const hitWall=head.x<0||head.y<0||head.x>=SIZE||head.y>=SIZE;
+  const hitSelf=snake.some(p=>p.x===head.x&&p.y===head.y);
+
+  if(hitWall||hitSelf){
+    gameOver=true;
+    message.textContent="Game Over — press a direction to restart";
+    return;
+  }
+
+  snake.unshift(head);
+
+  if(head.x===food.x&&head.y===food.y){
+    score++;
+    scoreText.textContent="Score: "+score;
+    food=makeFood();
+  }else{
+    snake.pop();
+  }
+
+  draw();
+}
+
+function draw(){
+  ctx.fillStyle="#0a2e24";
+  ctx.fillRect(0,0,SIZE,SIZE);
+
+  ctx.fillStyle="#ff5757";
+  ctx.beginPath();
+  ctx.arc(food.x+10,food.y+10,7,0,Math.PI*2);
+  ctx.fill();
+
+  snake.forEach((p,i)=>{
+    ctx.fillStyle=i===0?"#c2ff99":"#4ade80";
+    ctx.fillRect(p.x+1,p.y+1,18,18);
+  });
+}
+
+document.addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
+    e.preventDefault();
+  }
+  if(k==="w"||k==="arrowup")setDirection(0,-CELL);
+  if(k==="s"||k==="arrowdown")setDirection(0,CELL);
+  if(k==="a"||k==="arrowleft")setDirection(-CELL,0);
+  if(k==="d"||k==="arrowright")setDirection(CELL,0);
+});
+
+document.getElementById("up").addEventListener("click",()=>setDirection(0,-CELL));
+document.getElementById("down").addEventListener("click",()=>setDirection(0,CELL));
+document.getElementById("left").addEventListener("click",()=>setDirection(-CELL,0));
+document.getElementById("right").addEventListener("click",()=>setDirection(CELL,0));
+
+reset();
+setInterval(update,115);
+</script>
+</body>
+</html>

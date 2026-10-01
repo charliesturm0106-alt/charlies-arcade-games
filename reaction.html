@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Time</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
+  background:linear-gradient(135deg,#ff7a18,#e02d5d 60%,#b21f62)
+}
+.top{padding:20px}
+a{color:white;text-decoration:none}
+#box{
+  width:min(92%,720px);height:380px;margin:24px auto;
+  display:flex;align-items:center;justify-content:center;padding:30px;
+  border-radius:28px;background:#6b243b;
+  font-size:32px;font-weight:800;box-shadow:0 20px 50px rgba(0,0,0,.25);
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer
+}
+#result{font-size:30px;min-height:38px}
+#best{color:#ffe0ea}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="index.html">← Back to Arcade</a>
+  <h1>⚡ Reaction Time</h1>
+  <p id="best">Best: --</p>
+  <h2 id="result"></h2>
+</div>
+
+<div id="box">Tap to Start</div>
+
+<script>
+const box=document.getElementById("box");
+const result=document.getElementById("result");
+const bestText=document.getElementById("best");
+
+let state="start";
+let timer=null;
+let startTime=0;
+let best=null;
+
+function beginRound(){
+  if(timer!==null){
+    clearTimeout(timer);
+    timer=null;
+  }
+
+  state="waiting";
+  result.textContent="";
+  box.style.background="#b22e45";
+  box.textContent="WAIT FOR GREEN...";
+
+  const delay=1600+Math.random()*3000;
+
+  timer=setTimeout(()=>{
+    timer=null;
+    state="green";
+    box.style.background="#18a34a";
+    box.textContent="TAP NOW!";
+    startTime=performance.now();
+  },delay);
+}
+
+function handleTap(){
+  if(state==="start"){
+    beginRound();
+    return;
+  }
+
+  if(state==="waiting"){
+    if(timer!==null){
+      clearTimeout(timer);
+      timer=null;
+    }
+    state="start";
+    box.style.background="#7a293c";
+    box.textContent="TOO EARLY — TAP TO TRY AGAIN";
+    result.textContent="False Start";
+    return;
+  }
+
+  if(state==="green"){
+    const time=Math.round(performance.now()-startTime);
+    result.textContent=time+" ms";
+
+    if(best===null||time<best){
+      best=time;
+      bestText.textContent="Best: "+best+" ms";
+    }
+
+    state="start";
+    box.style.background="#6b243b";
+    box.textContent="Tap to Play Again";
+  }
+}
+
+box.addEventListener("click",handleTap);
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
+  background:linear-gradient(135deg,#2458d6,#6c2bd9 60%,#3a1f84)
+}
+.top{padding:20px 20px 5px}
+a{color:white;text-decoration:none}
+.difficulties{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:15px
+}
+.difficulties button{
+  border:0;border-radius:14px;padding:12px 16px;
+  background:rgba(255,255,255,.16);color:white;font-size:15px;font-weight:800
+}
+.difficulties button.active{background:white;color:#49258b}
+canvas{
+  width:min(92vw,400px);height:auto;background:linear-gradient(#10142d,#050713);
+  border:2px solid rgba(255,255,255,.25);border-radius:20px;
+  box-shadow:0 20px 50px rgba(0,0,0,.28);touch-action:none
+}
+.controls{margin:15px}
+.controls button{
+  width:110px;height:55px;margin:5px;border:0;border-radius:15px;
+  background:white;color:#4c1d95;font-size:27px;font-weight:bold
+}
+.help{color:#e3ddff}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="index.html">← Back to Arcade</a>
+  <h1>🏓 Pong</h1>
+  <h2 id="score">You 0 — 0 CPU</h2>
+</div>
+
+<div class="difficulties">
+  <button type="button" data-level="easy">Easy</button>
+  <button type="button" data-level="medium" class="active">Medium</button>
+  <button type="button" data-level="hard">Hard</button>
+  <button type="button" data-level="legend">Legend</button>
+</div>
+
+<canvas id="pong" width="400" height="520"></canvas>
+
+<div class="controls">
+  <button id="left" type="button">◀</button>
+  <button id="right" type="button">▶</button>
+</div>
+
+<p class="help">A / D • Arrow Keys • Buttons • Drag</p>
+
+<script>
+const canvas=document.getElementById("pong");
+const ctx=canvas.getContext("2d");
+const scoreText=document.getElementById("score");
+
+const W=400,H=520,PW=95,PH=12;
+let playerX=(W-PW)/2;
+let cpuX=(W-PW)/2;
+let ballX=W/2,ballY=H/2;
+let vx=4,vy=4;
+let playerScore=0,cpuScore=0;
+let moveLeft=false,moveRight=false;
+let cpuTracking=.07;
+let ballSpeed=4;
+
+const levels={
+  easy:{cpu:.035,speed:3.2},
+  medium:{cpu:.07,speed:4},
+  hard:{cpu:.11,speed:4.7},
+  legend:{cpu:.18,speed:5.5}
+};
+
+function updateScore(){
+  scoreText.textContent="You "+playerScore+" — "+cpuScore+" CPU";
+}
+
+function resetBall(direction){
+  ballX=W/2;
+  ballY=H/2;
+  vx=(Math.random()>.5?1:-1)*ballSpeed;
+  vy=(direction||(Math.random()>.5?1:-1))*ballSpeed;
+}
+
+function selectDifficulty(level){
+  const setting=levels[level];
+  cpuTracking=setting.cpu;
+  ballSpeed=setting.speed;
+
+  document.querySelectorAll(".difficulties button").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.level===level);
+  });
+
+  playerScore=0;
+  cpuScore=0;
+  updateScore();
+  resetBall(1);
+}
+
+document.querySelectorAll(".difficulties button").forEach(btn=>{
+  btn.addEventListener("click",()=>selectDifficulty(btn.dataset.level));
+});
+
+function updatePlayer(){
+  if(moveLeft)playerX-=7;
+  if(moveRight)playerX+=7;
+  playerX=Math.max(0,Math.min(W-PW,playerX));
+}
+
+function updateCPU(){
+  const target=ballX-PW/2;
+  cpuX+=(target-cpuX)*cpuTracking;
+  cpuX=Math.max(0,Math.min(W-PW,cpuX));
+}
+
+function updateBall(){
+  ballX+=vx;
+  ballY+=vy;
+
+  if(ballX<=8){
+    ballX=8;
+    vx=Math.abs(vx);
+  }
+
+  if(ballX>=W-8){
+    ballX=W-8;
+    vx=-Math.abs(vx);
+  }
+
+  const playerY=H-35;
+  const cpuY=23;
+
+  if(
+    vy>0 &&
+    ballY+8>=playerY &&
+    ballY-8<=playerY+PH &&
+    ballX>=playerX &&
+    ballX<=playerX+PW
+  ){
+    ballY=playerY-9;
+    vy=-Math.abs(vy);
+
+    const offset=(ballX-(playerX+PW/2))/(PW/2);
+    vx+=offset*1.6;
+  }
+
+  if(
+    vy<0 &&
+    ballY-8<=cpuY+PH &&
+    ballY+8>=cpuY &&
+    ballX>=cpuX &&
+    ballX<=cpuX+PW
+  ){
+    ballY=cpuY+PH+9;
+    vy=Math.abs(vy);
+  }
+
+  if(ballY>H+20){
+    cpuScore++;
+    updateScore();
+    resetBall(-1);
+  }
+
+  if(ballY<-20){
+    playerScore++;
+    updateScore();
+    resetBall(1);
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+
+  ctx.strokeStyle="rgba(255,255,255,.25)";
+  ctx.setLineDash([10,10]);
+  ctx.beginPath();
+  ctx.moveTo(0,H/2);
+  ctx.lineTo(W,H/2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle="white";
+  ctx.fillRect(playerX,H-35,PW,PH);
+  ctx.fillRect(cpuX,23,PW,PH);
+
+  ctx.beginPath();
+  ctx.arc(ballX,ballY,8,0,Math.PI*2);
+  ctx.fill();
+}
+
+function loop(){
+  updatePlayer();
+  updateCPU();
+  updateBall();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+
+  if(k==="a"||k==="arrowleft"){
+    moveLeft=true;
+    e.preventDefault();
+  }
+
+  if(k==="d"||k==="arrowright"){
+    moveRight=true;
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  const k=e.key.toLowerCase();
+
+  if(k==="a"||k==="arrowleft")moveLeft=false;
+  if(k==="d"||k==="arrowright")moveRight=false;
+});
+
+const leftButton=document.getElementById("left");
+const rightButton=document.getElementById("right");
+
+function stopButtons(){
+  moveLeft=false;
+  moveRight=false;
+}
+
+leftButton.addEventListener("pointerdown",()=>moveLeft=true);
+leftButton.addEventListener("pointerup",stopButtons);
+leftButton.addEventListener("pointercancel",stopButtons);
+leftButton.addEventListener("pointerleave",stopButtons);
+
+rightButton.addEventListener("pointerdown",()=>moveRight=true);
+rightButton.addEventListener("pointerup",stopButtons);
+rightButton.addEventListener("pointercancel",stopButtons);
+rightButton.addEventListener("pointerleave",stopButtons);
+
+canvas.addEventListener("pointerdown",movePaddleToPointer);
+
+canvas.addEventListener("pointermove",e=>{
+  if(e.pointerType==="mouse"&&e.buttons===0)return;
+  movePaddleToPointer(e);
+});
+
+function movePaddleToPointer(e){
+  const rect=canvas.getBoundingClientRect();
+  const scale=W/rect.width;
+  const x=(e.clientX-rect.left)*scale;
+
+  playerX=x-PW/2;
+  playerX=Math.max(0,Math.min(W-PW,playerX));
+}
+
+resetBall(1);
+loop();
+</script>
+</body>
+</html>

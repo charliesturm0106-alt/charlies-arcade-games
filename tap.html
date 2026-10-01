@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tap Rush</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
+  background:linear-gradient(135deg,#008fb0,#1476e4 60%,#324bd6)
+}
+.top{padding:20px}
+a{color:white;text-decoration:none}
+#game{
+  position:relative;width:min(92%,720px);height:500px;margin:auto;overflow:hidden;
+  background:rgba(0,0,0,.2);border:2px solid rgba(255,255,255,.2);
+  border-radius:25px;box-shadow:0 20px 50px rgba(0,0,0,.25)
+}
+#target{
+  position:absolute;width:70px;height:70px;border:0;border-radius:50%;
+  background:#f8ff46;box-shadow:0 0 24px rgba(248,255,70,.55)
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="index.html">← Back to Arcade</a>
+  <h1>🎯 Tap Rush</h1>
+  <h2 id="score">Score: 0</h2>
+</div>
+
+<div id="game">
+  <button id="target" type="button" aria-label="Target"></button>
+</div>
+
+<script>
+let score=0;
+
+const game=document.getElementById("game");
+const target=document.getElementById("target");
+const scoreText=document.getElementById("score");
+
+function moveTarget(){
+  const maxX=Math.max(0,game.clientWidth-target.offsetWidth);
+  const maxY=Math.max(0,game.clientHeight-target.offsetHeight);
+
+  target.style.left=(Math.random()*maxX)+"px";
+  target.style.top=(Math.random()*maxY)+"px";
+}
+
+target.addEventListener("click",()=>{
+  score++;
+  scoreText.textContent="Score: "+score;
+  moveTarget();
+});
+
+window.addEventListener("resize",moveTarget);
+
+moveTarget();
+</script>
+</body>
+</html>
