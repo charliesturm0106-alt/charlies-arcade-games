@@ -22,7 +22,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 .powerSide{position:absolute;right:12px;top:88px;z-index:3;width:62px;padding:10px 8px;background:#07140ce8;border:1px solid #3e6a49;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:7px;box-shadow:0 8px 24px #0005}
 .powerSide .label{font-size:9px;font-weight:900;letter-spacing:.7px;color:#c7dfcc;writing-mode:vertical-rl}.powerSide strong{font-size:11px}
 .meter{width:18px;height:230px;background:#0e2115;border:1px solid #3e6a49;border-radius:999px;overflow:hidden;position:relative}.meterFill{position:absolute;top:0;left:0;width:100%;height:10%;background:linear-gradient(180deg,#67df7f,#ffe16a,#ff766b)}
-.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #31533a;background:#102118;color:#effff3;font-weight:900;touch-action:none}.controls #throw{background:linear-gradient(90deg,#238d44,#58ca70)}
+.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#102118;color:#effff3;border:1px solid #31533a;border-radius:12px;font-weight:850}.toolbar button.active{background:linear-gradient(90deg,#238d44,#58ca70);border-color:#76e28a;box-shadow:0 0 0 2px #58ca7022}.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #31533a;background:#102118;color:#effff3;font-weight:900;touch-action:none}.controls #throw{background:linear-gradient(90deg,#238d44,#58ca70)}
 .status{text-align:center;color:#809987;font-size:12px;margin:11px 0 0;line-height:1.5}
 @media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.head h1{font-size:27px}.powerSide{right:8px;top:70px;transform:scale(.9);transform-origin:top right}.controls{grid-template-columns:repeat(5,1fr)}}
 </style>
@@ -40,6 +40,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   <div class="box"><span>BEST</span><strong id="best">0</strong></div>
 </div>
 
+<div class="toolbar" id="difficultyBar"><button class="diffBtn" data-diff="0">Rookie</button><button class="diffBtn active" data-diff="1">Pro</button><button class="diffBtn" data-diff="2">Elite</button></div>
 <div class="stage">
   <canvas id="game" width="800" height="760"></canvas>
 
@@ -65,7 +66,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   <button id="down">▼</button>
   <button id="right">▶</button>
 </div>
-<p class="status">WASD = move · tap/click = aim · hold Space = charge pass</p>
+<p class="status">WASD = move · tap/click = aim · hold Space = charge pass · every play uses a randomized route concept</p>
 
 <script>
 const c=document.getElementById('game');
@@ -76,6 +77,8 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const keys={w:false,a:false,s:false,d:false};
 
 let mode='ready';
+let difficulty=1;
+let playName='Crossers';
 let points=0,plays=0,completions=0,streak=0;
 let best=Number(localStorage.getItem('qb_best_v3')||0);
 let last=performance.now();
@@ -87,18 +90,52 @@ let qb={x:400,y:665,vx:0,vy:0};
 let aim={x:400,y:315};
 let receivers=[];
 let defenders=[];
+const diffs=[
+  {name:'Rookie',routeSpeed:.86,defSpeed:.72,pickRadius:18,catchBonus:8,spread:12},
+  {name:'Pro',routeSpeed:1.00,defSpeed:1.00,pickRadius:24,catchBonus:0,spread:22},
+  {name:'Elite',routeSpeed:1.16,defSpeed:1.30,pickRadius:30,catchBonus:-5,spread:34}
+];
+const playbook=[
+  {name:'Crossers',wr:[
+    {x:125,y:415,vx:118,vy:-10},{x:390,y:345,vx:-92,vy:-4},{x:675,y:410,vx:-122,vy:-12}
+  ],db:[{x:250,y:365,vx:62,vy:0},{x:520,y:335,vx:-58,vy:0},{x:395,y:230,vx:46,vy:0}]},
+  {name:'Slants',wr:[
+    {x:125,y:430,vx:102,vy:-50},{x:390,y:390,vx:70,vy:-55},{x:675,y:430,vx:-105,vy:-48}
+  ],db:[{x:215,y:360,vx:50,vy:-10},{x:505,y:355,vx:-48,vy:-8},{x:400,y:250,vx:34,vy:0}]},
+  {name:'Verticals',wr:[
+    {x:155,y:455,vx:18,vy:-92},{x:395,y:425,vx:-8,vy:-102},{x:640,y:455,vx:-18,vy:-96}
+  ],db:[{x:185,y:345,vx:22,vy:-44},{x:405,y:315,vx:-10,vy:-47},{x:610,y:350,vx:-20,vy:-43}]},
+  {name:'Out Routes',wr:[
+    {x:250,y:430,vx:-105,vy:-42},{x:400,y:380,vx:95,vy:-30},{x:555,y:430,vx:105,vy:-42}
+  ],db:[{x:195,y:350,vx:-38,vy:-15},{x:470,y:330,vx:34,vy:-12},{x:610,y:355,vx:42,vy:-13}]},
+  {name:'Mixed',wr:[
+    {x:135,y:440,vx:118,vy:-22},{x:405,y:420,vx:8,vy:-100},{x:660,y:390,vx:-112,vy:-12}
+  ],db:[{x:270,y:350,vx:54,vy:-5},{x:430,y:300,vx:5,vy:-42},{x:555,y:330,vx:-52,vy:2}]}
+];
 
 function makePlayers(){
-  receivers=[
-    {name:'X',x:145,y:410,vx:105,vy:-18,r:24},
-    {name:'Y',x:395,y:335,vx:-76,vy:-8,r:24},
-    {name:'Z',x:650,y:405,vx:-110,vy:-16,r:24}
-  ];
-  defenders=[
-    {x:260,y:370,vx:64,vy:-4,r:25},
-    {x:520,y:335,vx:-58,vy:2,r:25},
-    {x:390,y:225,vx:45,vy:0,r:25}
-  ];
+  const d=diffs[difficulty];
+  const base=playbook[Math.floor(Math.random()*playbook.length)];
+  playName=base.name;
+
+  const jitter=()=>Math.round((Math.random()-.5)*34);
+
+  receivers=base.wr.map((p,i)=>({
+    name:['X','Y','Z'][i],
+    x:clamp(p.x+jitter(),85,W-85),
+    y:clamp(p.y+jitter()*.45,160,500),
+    vx:p.vx*d.routeSpeed*(.92+Math.random()*.16),
+    vy:p.vy*d.routeSpeed*(.92+Math.random()*.16),
+    r:24
+  }));
+
+  defenders=base.db.map(p=>({
+    x:clamp(p.x+jitter(),85,W-85),
+    y:clamp(p.y+jitter()*.45,140,470),
+    vx:p.vx*d.defSpeed*(.90+Math.random()*.20),
+    vy:p.vy*d.defSpeed*(.90+Math.random()*.20),
+    r:25
+  }));
 }
 
 function hud(){
@@ -110,6 +147,7 @@ function hud(){
   const pct=Math.round(power*100);
   $('powerFill').style.height=pct+'%';
   $('powerText').textContent=pct+'%';
+  document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===difficulty));
 }
 
 function resetPlay(){
@@ -173,7 +211,7 @@ function throwBall(){
   charging=false;
   plays++;
 
-  const lowPowerSpread=(1-power)*22;
+  const lowPowerSpread=(1-power)*diffs[difficulty].spread;
   const tx=aim.x+(Math.random()-.5)*lowPowerSpread;
   const ty=aim.y+(Math.random()-.5)*lowPowerSpread*.55;
   const dist=Math.hypot(tx-qb.x,ty-(qb.y-25));
@@ -289,8 +327,8 @@ function update(dt){
         if(dd<defenderDist){defenderDist=dd;nearestDefender=d}
       }
 
-      const catchRadius=27+ball.power*9;
-      const pickRadius=24;
+      const catchRadius=27+ball.power*9+diffs[difficulty].catchBonus;
+      const pickRadius=diffs[difficulty].pickRadius;
 
       if(defenderDist<pickRadius && defenderDist<receiverDist){
         endPlay('INT',nearestDefender);
@@ -389,6 +427,15 @@ function drawQB(){
 function draw(){
   ctx.fillStyle='#2f8246';
   ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle='rgba(5,25,12,.72)';
+  ctx.fillRect(18,18,185,56);
+  ctx.fillStyle='#fff';
+  ctx.font='900 14px system-ui';
+  ctx.fillText('PLAY: '+playName,32,43);
+  ctx.fillStyle='#a9c9b0';
+  ctx.font='700 12px system-ui';
+  ctx.fillText(diffs[difficulty].name.toUpperCase(),32,62);
 
   ctx.strokeStyle='rgba(255,255,255,.55)';
   ctx.lineWidth=2;
@@ -500,6 +547,12 @@ document.addEventListener('keyup',e=>{
   }
 });
 
+document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{
+  if(ball||result||charging)return;
+  difficulty=+b.dataset.diff;
+  resetPlay();
+  hud();
+});
 $('start').onclick=start;
 window.addEventListener('blur',()=>{
   Object.keys(keys).forEach(k=>keys[k]=false);
