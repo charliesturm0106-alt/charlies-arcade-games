@@ -292,6 +292,8 @@ function routeMetrics(route){
  return {seg,cum,total}
 }
 function sampleRoute(route,metrics,d){
+ const firstA=route[0],firstB=route[1],firstHeading=Math.atan2(firstB[0]-firstA[0],firstB[1]-firstA[1]);
+ if(d<0)return {x:firstA[0]+Math.sin(firstHeading)*d,z:firstA[1]+Math.cos(firstHeading)*d,heading:firstHeading,segment:0};
  d=clamp(d,0,metrics.total);let i=0;while(i<metrics.seg.length-1&&d>metrics.cum[i+1])i++;
  const a=route[i],b=route[i+1]||a,len=metrics.seg[i]||1,t=clamp((d-metrics.cum[i])/len,0,1);
  return {x:lerp(a[0],b[0],t),z:lerp(a[1],b[1],t),heading:Math.atan2(b[0]-a[0],b[1]-a[1]),segment:i}
@@ -313,10 +315,9 @@ function setPlayerOnGrid(route,slot=0){
 function spawnRivals(r){
  clearRivals();const colors=[0xff704d,0xffd94a],car=effectiveCar(),base=Math.min(38,Math.max(24,car.top*.44704*.72+(r.repNeed||0)/300));
  for(let i=0;i<2;i++){
-  const m=makeCar(colors[i],.84),sample=sampleRoute(activeRace.route,activeRace.metrics,0);scene.add(m);
-  rivals.push({mesh:m,distance:0,speed:base*(i===0?.96:1.03),finished:false,finishedAt:0});
-  const a=activeRace.route[0],b=activeRace.route[1],h=Math.atan2(b[0]-a[0],b[1]-a[1]),fx=Math.sin(h),fz=Math.cos(h),sx=Math.cos(h),sz=-Math.sin(h),back=12+i*5,lateral=i===0?-3.1:3.1;
-  m.position.set(a[0]-fx*back+sx*lateral,0,a[1]-fz*back+sz*lateral);m.rotation.y=h
+  const m=makeCar(colors[i],.84),back=12+i*5,lane=i===0?-3.1:3.1,sample=sampleRoute(activeRace.route,activeRace.metrics,-back);scene.add(m);
+  rivals.push({mesh:m,distance:-back,lane,speed:base*(i===0?.96:1.03),finished:false,finishedAt:0});
+  const sx=Math.cos(sample.heading),sz=-Math.sin(sample.heading);m.position.set(sample.x+sx*lane,0,sample.z+sz*lane);m.rotation.y=sample.heading
  }
 }
 function updateRivals(dt){
@@ -324,7 +325,7 @@ function updateRivals(dt){
  for(const r of rivals){
   if(r.finished)continue;r.distance+=r.speed*dt;
   if(r.distance>=activeRace.metrics.total){r.distance=activeRace.metrics.total;r.finished=true;r.finishedAt=performance.now()}
-  const p=sampleRoute(activeRace.route,activeRace.metrics,r.distance);r.mesh.position.set(p.x,0,p.z);r.mesh.rotation.y=p.heading;r.mesh.userData.wheels?.forEach(w=>w.rotation.x-=r.speed*dt*.8)
+  const p=sampleRoute(activeRace.route,activeRace.metrics,r.distance),sx=Math.cos(p.heading),sz=-Math.sin(p.heading);r.mesh.position.set(p.x+sx*r.lane,0,p.z+sz*r.lane);r.mesh.rotation.y=p.heading;r.mesh.userData.wheels?.forEach(w=>w.rotation.x-=r.speed*dt*.8)
  }
 }
 function playerRaceProgress(){
