@@ -60,7 +60,7 @@ a{color:inherit}
 .sectionHead h2{margin:0;font-size:19px}.sectionHead p{margin:3px 0 0;color:#7e8b9f;font-size:10px}
 .buyModes{display:flex;gap:5px}.buyModes button{border:1px solid #2c394c;background:#111923;color:#8492a7;border-radius:9px;padding:7px 10px;font-size:10px;font-weight:950}.buyModes button.active{background:#25415c;color:white;border-color:#527aa0}
 
-.businesses{display:grid;gap:9px}
+.quickTip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 10px}.tipStep{border:1px solid #29364a;background:#0f151f;border-radius:12px;padding:9px 10px;color:#8e9bad;font-size:9px;font-weight:850}.tipStep b{display:block;color:#e8edf5;font-size:10px;margin-bottom:3px}.tipStep.done{border-color:#2f6d50;background:#10231b;color:#74c99d}.businesses{display:grid;gap:9px}
 .biz{border:1px solid var(--line);background:linear-gradient(150deg,#151c28,#0e131c);border-radius:18px;padding:12px;display:grid;grid-template-columns:48px 1fr 130px;gap:11px;align-items:center;position:relative;overflow:hidden}
 .biz.locked{opacity:.62}.bizIcon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:25px;background:#ffffff09;border:1px solid #ffffff0d}
 .bizTop{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.bizName{font-size:14px;font-weight:950}.owned{font-size:9px;font-weight:950;color:#b8c3d3;background:#ffffff0b;border:1px solid #ffffff12;border-radius:999px;padding:4px 6px}
@@ -89,7 +89,7 @@ a{color:inherit}
  .app{padding:0 9px 70px}.topbar{margin:0 -9px;padding:8px 9px}.brand span{display:none}.tokenPill{display:none}
  .hero{padding-top:10px}.city{min-height:190px}.skyline{left:7px;right:7px;gap:3px}.tower{min-width:20px}
  .metric{min-height:75px;padding:11px}.metric strong{font-size:17px}.tabs{top:51px}
- .sectionHead{align-items:flex-end}.biz{grid-template-columns:43px 1fr;padding:10px;gap:9px}.bizIcon{width:43px;height:43px;font-size:23px}.actions{grid-column:1/-1;grid-template-columns:1fr 1fr}.incomePop{right:20px;top:45%}
+ .sectionHead{align-items:flex-end}.quickTip{grid-template-columns:1fr}.biz{grid-template-columns:43px 1fr;padding:10px;gap:9px}.bizIcon{width:43px;height:43px;font-size:23px}.actions{grid-column:1/-1;grid-template-columns:1fr 1fr}.incomePop{right:20px;top:45%}
  .cards{grid-template-columns:1fr}.legacyGrid{grid-template-columns:1fr}.achievements{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
@@ -141,6 +141,11 @@ a{color:inherit}
  <div class="sectionHead">
    <div><h2>Your Empire</h2><p>Buy businesses. Tap RUN until you hire managers.</p></div>
    <div class="buyModes"><button class="active" data-buy="1">1</button><button data-buy="10">10</button><button data-buy="max">MAX</button></div>
+ </div>
+ <div class="quickTip" id="quickTip">
+   <div class="tipStep" id="tipBuy"><b>1 · BUY</b>Own a business.</div>
+   <div class="tipStep" id="tipRun"><b>2 · RUN</b>Tap the card or RUN.</div>
+   <div class="tipStep" id="tipManager"><b>3 · AUTOMATE</b>Hire a manager.</div>
  </div>
  <div class="businesses" id="businesses"></div>
 </section>
@@ -314,7 +319,7 @@ function validate(raw){
   s.stats.events=Math.floor(finite(raw.stats.events,0));
  }
  if(raw.event){
-  s.event.type=typeof raw.event.type==="string"?raw.event.type:null;
+  s.event.type=(raw.event.type==="double"||raw.event.type==="viral")?raw.event.type:null;
   s.event.biz=Number.isFinite(Number(raw.event.biz))?Math.floor(Number(raw.event.biz)):-1;
   s.event.endAt=finite(raw.event.endAt,0);
   s.event.nextAt=finite(raw.event.nextAt,Date.now()+rand(60000,140000));
@@ -413,6 +418,7 @@ function buyBusiness(i){
  var q=qty(i);if(q<1)return toast("Not enough cash");
  var cost=costFor(i,q);if(!spend(cost))return toast("Not enough cash");
  state.biz[i].owned+=q;state.stats.purchases+=q;
+ if(!state.biz[i].manager&&!state.biz[i].running){state.biz[i].running=true;state.biz[i].progress=0}
  checkAchievements();renderAll();
 }
 function startBusiness(i){
@@ -545,6 +551,9 @@ function renderHud(){
  $("tokenTop").textContent="◆ "+short(state.prestige.tokens);$("runCash").textContent=fmt(state.runEarned);
  $("units").textContent=short(totalOwned());$("managerCount").textContent=managerCount()+" / 8";
  $("achievementCount").textContent=achievementCount()+" / "+achievementDefs.length;
+ var hasAny=totalOwned()>0,hasRun=state.runEarned>0,hasMgr=managerCount()>0;
+ $("tipBuy").classList.toggle("done",hasAny);$("tipRun").classList.toggle("done",hasRun);$("tipManager").classList.toggle("done",hasMgr);
+ $("quickTip").style.display=hasMgr?"none":"grid";
  renderGoal();renderCity();renderBoost();
 }
 function renderGoal(){
@@ -572,17 +581,27 @@ function renderBoost(){
 }
 function renderBusinesses(){
  var box=$("businesses");box.innerHTML="";
+ var highest=-1;
+ state.biz.forEach(function(x,i){if(x.owned>0)highest=i});
+ var visibleLimit=Math.min(businesses.length-1,Math.max(1,highest+2));
  businesses.forEach(function(b,i){
+  if(i>visibleLimit)return;
   var x=state.biz[i],q=qty(i),buyQ=q>0?q:(buyMode==="max"?1:Number(buyMode)),cost=costFor(i,buyQ),next=nextMilestone(x.owned);
   var row=document.createElement("div");row.className="biz"+(x.owned===0?" locked":"");row.setAttribute("data-row",i);
-  var cycleIncome=x.owned>0?fmt(payout(i,false))+" every "+b.cycle+"s":"First unit "+fmt(b.cost);
-  var mile=next?(next-x.owned)+" more to ×"+milestoneMult(next)+" milestone":"All milestones reached";
-  var runText=x.manager?"AUTO":x.running?"RUNNING":"RUN";
+  var cycleIncome=x.owned>0?fmt(payout(i,false))+" / "+b.cycle+"s":"Unlock for "+fmt(b.cost);
+  var autoText=x.manager?" · AUTO "+fmt(payout(i,false)/b.cycle)+"/sec":"";
+  var mile=next?(next-x.owned)+" more to milestone at "+next:"All milestones reached";
+  var runText=x.manager?"AUTOMATED":x.running?"RUNNING":"RUN";
+  var label=buyMode==="max"?(q>0?"BUY MAX ("+q+")":"BUY MAX"):"BUY "+buyQ;
   row.innerHTML='<div class="bizIcon">'+b.icon+'</div>'+
-   '<div><div class="bizTop"><span class="bizName">'+b.name+'</span><span class="owned">OWNED '+x.owned+'</span></div>'+
-   '<div class="bizInfo">'+cycleIncome+'</div><div class="milestone">'+mile+'</div><div class="progress"><i id="prog'+i+'"></i></div></div>'+
-   '<div class="actions"><button class="buy '+(state.cash>=cost?"canBuy":"")+'" data-buybiz="'+i+'">BUY '+(buyMode==="max"?(q||"MAX"):buyQ)+' · '+fmt(cost)+'</button>'+
+   '<div class="bizMain"><div class="bizTop"><span class="bizName">'+b.name+'</span><span class="owned">OWNED '+x.owned+'</span></div>'+
+   '<div class="bizInfo">'+cycleIncome+autoText+'</div><div class="milestone">'+mile+'</div><div class="progress"><i id="prog'+i+'"></i></div></div>'+
+   '<div class="actions"><button class="buy '+(state.cash>=cost?"canBuy":"")+'" data-buybiz="'+i+'">'+label+' · '+fmt(cost)+'</button>'+
    '<button class="run '+(x.manager?"auto":x.running?"wait":"")+'" data-run="'+i+'" '+(x.owned===0||x.manager||x.running?"disabled":"")+'>'+runText+'</button></div>';
+  row.addEventListener("click",function(e){
+    if(e.target&&e.target.closest&&e.target.closest("button"))return;
+    if(x.owned>0&&!x.manager&&!x.running)startBusiness(i);
+  });
   box.appendChild(row);
  });
  box.querySelectorAll("[data-buybiz]").forEach(function(btn){btn.onclick=function(){buyBusiness(+btn.dataset.buybiz)}});
@@ -604,11 +623,16 @@ function renderUpgrades(){
 }
 function renderManagers(){
  var box=$("managerCards");box.innerHTML="";
+ var shown=0;
  businesses.forEach(function(b,i){
-  var x=state.biz[i],open=x.owned>0,e=document.createElement("div");e.className="card "+(x.manager?"ownedCard":open?"":"locked");
-  e.innerHTML='<div class="cardIcon">'+b.icon+'</div><h3>'+b.manager+'</h3><p>'+(open?"Automatically runs "+b.name+" every "+b.cycle+" seconds.":"Buy "+b.name+" first.")+'</p><div class="price">'+(x.manager?"HIRED":fmt(b.managerCost))+'</div><button class="hire" data-manager="'+i+'" '+(x.manager||!open?"disabled":"")+'>'+(x.manager?"AUTOMATED":"HIRE")+'</button>';
+  var x=state.biz[i];
+  if(x.owned<=0&&!x.manager)return;
+  shown++;
+  var e=document.createElement("div");e.className="card "+(x.manager?"ownedCard":"");
+  e.innerHTML='<div class="cardIcon">'+b.icon+'</div><h3>'+b.manager+'</h3><p>Automatically runs '+b.name+' every '+b.cycle+' seconds.</p><div class="price">'+(x.manager?"HIRED":fmt(b.managerCost))+'</div><button class="hire" data-manager="'+i+'" '+(x.manager?"disabled":"")+'>'+(x.manager?"AUTOMATED":"HIRE")+'</button>';
   box.appendChild(e);
  });
+ if(!shown){var empty=document.createElement("div");empty.className="card locked";empty.innerHTML='<div class="cardIcon">🧑‍💼</div><h3>No managers yet</h3><p>Buy your first business, then managers will appear here.</p>';box.appendChild(empty)}
  box.querySelectorAll("[data-manager]").forEach(function(b){b.onclick=function(){hireManager(+b.dataset.manager)}});
 }
 function renderLegacy(){
