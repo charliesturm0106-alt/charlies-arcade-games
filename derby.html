@@ -24,7 +24,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 .goodZone{position:absolute;top:74%;left:0;width:100%;height:15%;background:#f6db4f55}
 .perfectZone{position:absolute;top:80%;left:0;width:100%;height:5%;background:#59ed7a}
 .pitchLine{position:absolute;left:-4px;width:26px;height:3px;background:#fff;box-shadow:0 0 8px #fff;top:0}
-.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #34475d;background:#17202c;color:#f5f9ff;font-weight:900;touch-action:none}.controls #swing{background:linear-gradient(90deg,#cf452f,#f37f37)}
+.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#17202c;color:#f5f9ff;border:1px solid #34475d;border-radius:12px;font-weight:850}.toolbar button.active{background:linear-gradient(90deg,#cf452f,#f37f37);border-color:#ffab72;box-shadow:0 0 0 2px #f37f3722}.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #34475d;background:#17202c;color:#f5f9ff;font-weight:900;touch-action:none}.controls #swing{background:linear-gradient(90deg,#cf452f,#f37f37)}
 .status{text-align:center;color:#8999aa;font-size:12px;margin:11px 0 0;line-height:1.5}
 @media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.head h1{font-size:27px}.timingSide{right:8px;top:70px;transform:scale(.9);transform-origin:top right}}
 </style>
@@ -42,14 +42,15 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   <div class="box"><span>BONUS</span><strong id="bonus">--</strong></div>
 </div>
 
+<div class="toolbar" id="difficultyBar"><button class="diffBtn" data-diff="0">Rookie</button><button class="diffBtn active" data-diff="1">Pro</button><button class="diffBtn" data-diff="2">Elite</button></div>
 <div class="stage">
   <canvas id="game" width="800" height="720"></canvas>
 
   <div class="timingSide">
     <span class="label">SWING TIMING</span>
     <div class="timingMeter">
-      <div class="goodZone"></div>
-      <div class="perfectZone"></div>
+      <div class="goodZone" id="goodZone"></div>
+      <div class="perfectZone" id="perfectZone"></div>
       <div class="timingFill" id="timingFill"></div>
       <div class="pitchLine" id="pitchLine"></div>
     </div>
@@ -72,7 +73,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   <button id="down">▼</button>
   <button id="right">▶</button>
 </div>
-<p class="status">WASD/arrows = move batting cursor · Space = swing · gold ball = 2 HR</p>
+<p class="status">WASD/arrows = move batting cursor · Space = swing · green timing zone moves every pitch · gold ball = 2 HR</p>
 
 <script>
 const c=document.getElementById('game');
@@ -90,6 +91,7 @@ const pitchTypes=[
 ];
 
 let mode='ready';
+let difficulty=1;
 let hrs=0,outs=0,streak=0;
 let best=Number(localStorage.getItem('hr_best_v3')||0);
 let last=performance.now();
@@ -97,12 +99,19 @@ let pitch=null,flight=null,result='',resultTimer=0;
 let nextPitchTimer=.55,swingT=0,flash=0;
 let cursorCol=1,cursorRow=1;
 let pitchNumber=0;
+let timingCenter=.82;
+const diffs=[
+  {name:'Rookie',speed:.86,goodHalf:.095,perfectHalf:.030,locationForgive:1},
+  {name:'Pro',speed:1.00,goodHalf:.065,perfectHalf:.018,locationForgive:0},
+  {name:'Elite',speed:1.18,goodHalf:.040,perfectHalf:.010,locationForgive:0}
+];
 
 function hud(){
   $('hrs').textContent=hrs;
   $('outs').textContent=outs+' / 10';
   $('streak').textContent=streak;
   $('bonus').textContent=pitch&&pitch.bonus?'2X':'--';
+  document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===difficulty));
 }
 
 function start(){
@@ -124,6 +133,7 @@ function start(){
   $('timingFill').style.height='0%';
   $('pitchLine').style.top='0%';
   $('pitchType').textContent='READY';
+  randomizeTimingZone();
   $('overlay').hidden=true;
   last=performance.now();
   hud();
@@ -141,12 +151,23 @@ function finish(){
   $('overlay').hidden=false;
 }
 
+function randomizeTimingZone(){
+  const d=diffs[difficulty];
+  const margin=d.goodHalf+.035;
+  timingCenter=margin+Math.random()*(1-margin*2);
+  $('goodZone').style.top=((timingCenter-d.goodHalf)*100)+'%';
+  $('goodZone').style.height=(d.goodHalf*200)+'%';
+  $('perfectZone').style.top=((timingCenter-d.perfectHalf)*100)+'%';
+  $('perfectZone').style.height=(d.perfectHalf*200)+'%';
+}
+
 function newPitch(){
   pitchNumber++;
   const type=pitchTypes[Math.floor(Math.random()*pitchTypes.length)];
   const targetCol=Math.floor(Math.random()*3);
   const targetRow=Math.floor(Math.random()*3);
   const bonus=pitchNumber%5===0;
+  randomizeTimingZone();
 
   const tx=zone.x+targetCol*zone.cell+zone.cell/2;
   const ty=zone.y+targetRow*zone.cell+zone.cell/2;
@@ -158,6 +179,7 @@ function newPitch(){
     tx,
     ty,
     bonus,
+    timingCenter,
     progress:0,
     x:400,
     y:150
@@ -198,38 +220,39 @@ c.addEventListener('pointerdown',e=>{
 function resolveSwing(){
   if(!pitch)return;
 
-  const timingError=Math.abs(pitch.progress-.82);
+  const d=diffs[difficulty];
+  const timingError=Math.abs(pitch.progress-pitch.timingCenter);
   const locationError=Math.max(
     Math.abs(cursorCol-pitch.targetCol),
     Math.abs(cursorRow-pitch.targetRow)
   );
 
   const exact=locationError===0;
-  const adjacent=locationError===1;
+  const adjacent=locationError<=1+d.locationForgive;
   const bonusMult=pitch.bonus?2:1;
 
   let distance=0;
   let homeRun=false;
   let label='';
 
-  if(exact && timingError<=.025){
+  if(exact && timingError<=d.perfectHalf){
     distance=470+Math.round((Math.random()-.5)*12)+(streak*3);
     homeRun=true;
     label='PERFECT!';
-  }else if(exact && timingError<=.070){
-    distance=410+Math.round((.07-timingError)*500)+(streak*2);
+  }else if(exact && timingError<=d.goodHalf){
+    distance=410+Math.round((d.goodHalf-timingError)*650)+(streak*2);
     homeRun=true;
     label='CRUSHED!';
-  }else if((exact||adjacent) && timingError<=.115){
-    const locPenalty=adjacent?45:0;
-    distance=Math.round(375-locPenalty+(1-timingError/.115)*55);
+  }else if((exact||adjacent) && timingError<=d.goodHalf*1.55){
+    const locPenalty=exact?0:(difficulty===0?20:45);
+    distance=Math.round(375-locPenalty+(1-timingError/(d.goodHalf*1.55))*55);
     homeRun=distance>=390;
     label=homeRun?'HOME RUN!':'DEEP FLY';
-  }else if(timingError<=.16 && adjacent){
-    distance=285+Math.round((.16-timingError)*300);
+  }else if(timingError<=d.goodHalf*2.15 && adjacent){
+    distance=285+Math.round((d.goodHalf*2.15-timingError)*300);
     label='WEAK CONTACT';
   }else{
-    label=timingError>.24?'WHIFF':'FOUL';
+    label=timingError>d.goodHalf*3.0?'WHIFF':'FOUL';
   }
 
   const type=pitch.type;
@@ -319,7 +342,7 @@ function update(dt){
     return;
   }
 
-  pitch.progress+=dt*pitch.type.speed;
+  pitch.progress+=dt*pitch.type.speed*diffs[difficulty].speed;
   const p=pitch.progress;
 
   const approach=clamp(p,0,1);
@@ -535,6 +558,12 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{
+  if(pitch||flight||result)return;
+  difficulty=+b.dataset.diff;
+  randomizeTimingZone();
+  hud();
+});
 $('start').onclick=start;
 
 hud();
