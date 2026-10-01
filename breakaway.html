@@ -1,35 +1,257 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Hockey Breakaway · Charlie's Arcade</title><style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#16355c,#07111f 58%);color:#f7fbff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}main{width:min(100%,760px)}a{color:#b9cce8;text-decoration:none;font-weight:800;font-size:14px}.head{margin:12px 0 14px}.head h1{font-size:31px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8fa4bf;font-size:13px}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:10px}.box{background:#0d1a2a;border:1px solid #203652;border-radius:14px;padding:10px 12px}.box span{display:block;color:#7890ae;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:19px}.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#102037;color:#e8f2ff;border:1px solid #27415f;border-radius:12px;font-weight:850}.toolbar button.active{background:linear-gradient(90deg,#1d6fd1,#24bde6);border-color:#60d9ff;box-shadow:0 0 0 2px #55cfff22}.stage{position:relative;overflow:hidden;border:1px solid #294566;border-radius:22px;background:#d9f6ff;box-shadow:0 24px 70px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#07111fd1;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,400px);padding:24px;background:#0c1a2be8;border:1px solid #294a70;border-radius:20px}.panel h2{font-size:28px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.55;color:#9db0c8;margin:0 0 18px}.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#2d8cff,#4ae1ff)}.controls{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:10px;margin-top:10px}.controls button{padding:14px 8px;border-radius:12px;border:1px solid #29445f;background:#102039;color:#eef7ff;font-weight:900;touch-action:none}.controls #shoot{background:linear-gradient(90deg,#1f72d6,#24bce3)}.status{text-align:center;color:#8ea4bd;font-size:12px;margin:11px 0 0}@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}.head h1{font-size:26px}.toolbar{flex-wrap:wrap}.toolbar button{min-width:45%}}
-</style></head><body><main><a href="index.html">← Back to Arcade</a><div class="head"><h1>🏒 Hockey Breakaway</h1><p class="sub">Attack the net, sell the deke, then finish.</p></div><div class="hud"><div class="box"><span>GOALS</span><strong id="goals">0</strong></div><div class="box"><span>ATTEMPTS</span><strong id="attempts">0/10</strong></div><div class="box"><span>STREAK</span><strong id="streak">0</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div></div><div class="toolbar"><button class="diffBtn" data-diff="0">Rookie</button><button class="diffBtn active" data-diff="1">Pro</button><button class="diffBtn" data-diff="2">Elite</button></div><div class="stage"><canvas id="game" width="700" height="820"></canvas><div class="overlay" id="overlay"><div class="panel"><h2 id="title">Hockey Breakaway</h2><p id="message">Skate toward the goalie with A/D or ←/→. Cut side-to-side to make the goalie commit, then shoot before you run out of ice.</p><button class="primary" id="start">Start Breakaway</button></div></div></div><div class="controls"><button id="left">◀ DEKE</button><button id="right">DEKE ▶</button><button id="shoot">SHOOT</button></div><p class="status">Keyboard: A / D or arrows to skate · Space to shoot</p><script>
-const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id),keys={left:false,right:false};
-let mode='ready',difficulty=1,goals=0,attempts=0,streak=0,best=+(localStorage.getItem('hs_breakaway')||0),last=0,result='',resultTime=0;
-let skater,goalie,puck,shot=null,dekeMeter=0,lastDir=0,dirChanges=0;
-const diffs=[{name:'Rookie',track:1.5,react:.34,save:55},{name:'Pro',track:2.25,react:.22,save:68},{name:'Elite',track:3.15,react:.12,save:82}];
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>Hockey Breakaway · Charlie's Arcade</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17385e,#07111f 58%);color:#f7fbff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}
+main{width:min(100%,780px)}
+a{color:#b9cce8;text-decoration:none;font-weight:800;font-size:14px}
+.head{margin:12px 0 14px}.head h1{font-size:31px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8fa4bf;font-size:13px}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:10px}
+.box{background:#0d1a2a;border:1px solid #203652;border-radius:14px;padding:10px 12px}.box span{display:block;color:#7890ae;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:19px}
+.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#102037;color:#e8f2ff;border:1px solid #27415f;border-radius:12px;font-weight:850}.toolbar button.active{background:linear-gradient(90deg,#1d6fd1,#24bde6);border-color:#60d9ff;box-shadow:0 0 0 2px #55cfff22}
+.stage{position:relative;overflow:hidden;border:1px solid #294566;border-radius:22px;background:#d9f6ff;box-shadow:0 24px 70px #0008}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#07111fd1;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}
+.panel{width:min(100%,410px);padding:24px;background:#0c1a2be8;border:1px solid #294a70;border-radius:20px}.panel h2{font-size:28px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.55;color:#9db0c8;margin:0 0 18px}
+.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#2d8cff,#4ae1ff)}
+.powerWrap{display:flex;align-items:center;gap:10px;margin-top:10px}.powerLabel{font-size:11px;font-weight:900;color:#8ea4bd;min-width:78px}.power{height:12px;flex:1;background:#0b1624;border:1px solid #29445f;border-radius:999px;overflow:hidden}.powerFill{height:100%;width:0;background:linear-gradient(90deg,#4fe28d,#ffe067,#ff667d)}
+.controls{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:10px;margin-top:10px}.controls button{padding:15px 8px;border-radius:12px;border:1px solid #29445f;background:#102039;color:#eef7ff;font-weight:900;touch-action:none}.controls #shoot{background:linear-gradient(90deg,#1f72d6,#24bce3)}
+.status{text-align:center;color:#8ea4bd;font-size:12px;margin:11px 0 0}
+@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}.head h1{font-size:26px}.toolbar{flex-wrap:wrap}.toolbar button{min-width:45%}}
+</style>
+</head>
+<body>
+<main>
+<a href="index.html">← Back to Arcade</a>
+<div class="head"><h1>🏒 Hockey Breakaway</h1><p class="sub">Skate in. Sell the deke. Pick your corner.</p></div>
+<div class="hud">
+  <div class="box"><span>GOALS</span><strong id="goals">0</strong></div>
+  <div class="box"><span>ATTEMPTS</span><strong id="attempts">0/10</strong></div>
+  <div class="box"><span>STREAK</span><strong id="streak">0</strong></div>
+  <div class="box"><span>BEST</span><strong id="best">0</strong></div>
+</div>
+<div class="toolbar">
+  <button class="diffBtn" data-diff="0">Rookie</button>
+  <button class="diffBtn active" data-diff="1">Pro</button>
+  <button class="diffBtn" data-diff="2">Elite</button>
+</div>
+<div class="stage">
+  <canvas id="game" width="700" height="820"></canvas>
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="title">Hockey Breakaway</h2>
+      <p id="message">Skate with A/D or the buttons. Aim the blue target anywhere in the net with your mouse or finger. Hold SHOOT or Space to charge, then release.</p>
+      <button class="primary" id="start">Start Breakaway</button>
+    </div>
+  </div>
+</div>
+<div class="powerWrap"><span class="powerLabel">SHOT POWER</span><div class="power"><div class="powerFill" id="powerFill"></div></div><strong id="powerText">0%</strong></div>
+<div class="controls"><button id="left">◀ LEFT</button><button id="right">RIGHT ▶</button><button id="shoot">HOLD TO SHOOT</button></div>
+<p class="status">Aim on the net with mouse/finger · A/D or arrows to skate · Hold Space to charge</p>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
+const keys={left:false,right:false};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-function hud(){$('goals').textContent=goals;$('attempts').textContent=attempts+'/10';$('streak').textContent=streak;$('best').textContent=best;document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===difficulty))}
-function resetAttempt(){skater={x:350,y:710,vx:0,speed:92};goalie={x:350,y:188,target:350,commit:0};puck={x:350,y:688};shot=null;result='';resultTime=0;dekeMeter=0;lastDir=0;dirChanges=0}
-function start(){goals=attempts=streak=0;resetAttempt();mode='play';$('overlay').hidden=true;hud();last=performance.now()}
-function finish(){mode='over';if(goals>best){best=goals;localStorage.setItem('hs_breakaway',best)}hud();$('title').textContent='Breakaway Set Complete';$('message').textContent='You scored '+goals+' of 10. Best: '+best+'.';$('start').textContent='Play Again';$('overlay').hidden=false}
-function takeShot(){if(mode!=='play'||shot||result)return;attempts++;const d=diffs[difficulty],distance=skater.y-220;const proximity=1-clamp((distance-55)/430,0,1);const aimX=skater.x+(skater.vx*.12);const dekeBonus=clamp(dekeMeter/3,0,1);const readError=(1-dekeBonus)*(Math.random()-.5)*90;goalie.target=clamp(aimX+readError,235,465);goalie.commit=d.react;const spread=(1-proximity)*34+(1-dekeBonus)*25;const tx=clamp(aimX+(Math.random()-.5)*spread,190,510);const ty=150+Math.random()*85;shot={sx:puck.x,sy:puck.y,x:puck.x,y:puck.y,tx,ty,t:0,speed:2.9+proximity*2.6,dekeBonus};hud()}
-function endAttempt(scored,label){if(scored){goals++;streak++;result='GOAL!'}else{streak=0;result=label}resultTime=1.15;hud()}
-function update(dt){if(mode!=='play')return;if(result){resultTime-=dt;if(resultTime<=0){if(attempts>=10)finish();else resetAttempt()}return}
-const move=(keys.right?1:0)-(keys.left?1:0);const oldSign=Math.sign(skater.vx);
-skater.vx+=move*520*dt;skater.vx*=Math.pow(.80,dt*60);skater.vx=clamp(skater.vx,-245,245);skater.x=clamp(skater.x+skater.vx*dt,110,590);skater.y-=skater.speed*dt;skater.speed=Math.min(180,skater.speed+8*dt);
-const newSign=Math.sign(skater.vx);if(move&&newSign&&newSign!==lastDir&&Math.abs(skater.vx)>70){dirChanges++;dekeMeter=Math.min(3,dekeMeter+1);lastDir=newSign;goalie.commit=.14+Math.random()*.12;goalie.target=clamp(skater.x+(newSign*70),225,475)}
-if(!goalie.commit){goalie.target+=((skater.x-goalie.target)*diffs[difficulty].track*dt)}else goalie.commit=Math.max(0,goalie.commit-dt);
-goalie.x+=clamp(goalie.target-goalie.x,-220*diffs[difficulty].track*dt,220*diffs[difficulty].track*dt);goalie.x=clamp(goalie.x,230,470);
-puck.x=skater.x+18;puck.y=skater.y-10;
-if(skater.y<300&&!shot){takeShot()}
-if(shot){shot.t+=dt*shot.speed;const t=clamp(shot.t,0,1),e=1-Math.pow(1-t,2);shot.x=shot.sx+(shot.tx-shot.sx)*e;shot.y=shot.sy+(shot.ty-shot.sy)*e;puck.x=shot.x;puck.y=shot.y;goalie.commit=Math.max(0,goalie.commit-dt);if(goalie.commit<=0)goalie.x+=clamp(shot.tx-goalie.x,-290*diffs[difficulty].track*dt,290*diffs[difficulty].track*dt);if(t>=1){const dx=Math.abs(shot.tx-goalie.x),saved=dx<diffs[difficulty].save*(1-shot.dekeBonus*.22);endAttempt(!saved,saved?'SAVED!':'MISSED!');shot=null}}
+const diffs=[
+  {name:'Rookie',track:1.25,react:.42,move:245,save:43,read:.22},
+  {name:'Pro',track:1.9,react:.25,move:340,save:57,read:.48},
+  {name:'Elite',track:2.65,react:.12,move:445,save:70,read:.73}
+];
+let mode='ready',difficulty=1,goals=0,attempts=0,streak=0,best=+(localStorage.getItem('hs_breakaway')||0),last=0;
+let skater,goalie,puck,aim,shot=null,result='',resultTime=0,charge=0,charging=false,chargeDir=1,dekes=0,lastMove=0,flash=0;
+
+function hud(){
+  $('goals').textContent=goals;
+  $('attempts').textContent=attempts+'/10';
+  $('streak').textContent=streak;
+  $('best').textContent=best;
+  document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===difficulty));
+}
+function resetAttempt(){
+  skater={x:350,y:710,vx:0,forward:118};
+  goalie={x:350,y:190,target:350,react:0,commit:0};
+  puck={x:369,y:695};
+  aim={x:350,y:165};
+  shot=null;result='';resultTime=0;charge=0;charging=false;chargeDir=1;dekes=0;lastMove=0;flash=0;
+  $('powerFill').style.width='0%';$('powerText').textContent='0%';
+}
+function start(){
+  goals=attempts=streak=0;resetAttempt();mode='play';$('overlay').hidden=true;hud();last=performance.now();
+}
+function finish(){
+  mode='over';
+  if(goals>best){best=goals;localStorage.setItem('hs_breakaway',best)}
+  hud();$('title').textContent='Breakaway Set Complete';$('message').textContent='You scored '+goals+' of 10. Best: '+best+'.';$('start').textContent='Play Again';$('overlay').hidden=false;
+}
+function setAim(clientX,clientY){
+  if(mode!=='play'||shot||result)return;
+  const r=c.getBoundingClientRect();
+  const x=(clientX-r.left)*W/r.width,y=(clientY-r.top)*H/r.height;
+  aim.x=clamp(x,175,525);aim.y=clamp(y,92,245);
+}
+c.addEventListener('pointerdown',e=>{e.preventDefault();setAim(e.clientX,e.clientY)});
+c.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.buttons)setAim(e.clientX,e.clientY)});
+
+function beginCharge(){
+  if(mode!=='play'||shot||result)return;
+  charging=true;
+}
+function releaseShot(){
+  if(mode!=='play'||shot||result||!charging)return;
+  charging=false;attempts++;
+  const d=diffs[difficulty];
+  const power=Math.max(.12,charge);
+  const dekeBonus=clamp(dekes/3,0,1);
+  const accuracySpread=(1-power)*42+(1-dekeBonus)*18;
+  const tx=clamp(aim.x+(Math.random()-.5)*accuracySpread,165,535);
+  const ty=clamp(aim.y+(Math.random()-.5)*accuracySpread*.45,88,250);
+  const read=Math.random()<d.read*(1-dekeBonus*.55);
+  goalie.react=d.react;
+  goalie.target=read?tx:clamp(tx+(Math.random()-.5)*135,205,495);
+  shot={sx:puck.x,sy:puck.y,x:puck.x,y:puck.y,tx,ty,t:0,speed:3.6+power*3.7,power,dekeBonus};
+  flash=.13;hud();
+}
+function endAttempt(scored,label){
+  if(scored){goals++;streak++;result='GOAL!'}else{streak=0;result=label}
+  resultTime=1.05;hud();
+}
+function update(dt){
+  if(mode!=='play')return;
+  flash=Math.max(0,flash-dt);
+  if(result){
+    resultTime-=dt;
+    if(resultTime<=0){if(attempts>=10)finish();else resetAttempt()}
+    return;
+  }
+
+  const move=(keys.right?1:0)-(keys.left?1:0);
+  const targetVX=move*360;
+  skater.vx+=(targetVX-skater.vx)*Math.min(1,dt*12);
+  skater.x=clamp(skater.x+skater.vx*dt,82,618);
+
+  if(move && move!==lastMove){
+    if(lastMove!==0){dekes=Math.min(4,dekes+1);goalie.commit=.18+.10*Math.random();goalie.target=clamp(skater.x+move*95,215,485)}
+    lastMove=move;
+  }
+
+  skater.y-=skater.forward*dt;
+  skater.forward=Math.min(170,skater.forward+10*dt);
+
+  if(charging){
+    charge+=chargeDir*dt*1.2;
+    if(charge>=1){charge=1;chargeDir=-1}
+    if(charge<=.12){charge=.12;chargeDir=1}
+    const pct=Math.round(charge*100);
+    $('powerFill').style.width=pct+'%';$('powerText').textContent=pct+'%';
+  }
+
+  if(!goalie.commit){
+    goalie.target+=((skater.x-goalie.target)*diffs[difficulty].track*dt);
+  }else goalie.commit=Math.max(0,goalie.commit-dt);
+  goalie.x+=clamp(goalie.target-goalie.x,-diffs[difficulty].move*dt,diffs[difficulty].move*dt);
+  goalie.x=clamp(goalie.x,225,475);
+
+  if(!shot){
+    puck.x=skater.x+20;puck.y=skater.y-4;
+    if(skater.y<315 && !charging){beginCharge();charge=.42}
+    if(skater.y<270){releaseShot()}
+  }else{
+    const d=diffs[difficulty];
+    shot.t+=dt*shot.speed;
+    const t=clamp(shot.t,0,1),e=1-Math.pow(1-t,2.2);
+    shot.x=shot.sx+(shot.tx-shot.sx)*e;
+    shot.y=shot.sy+(shot.ty-shot.sy)*e;
+    puck.x=shot.x;puck.y=shot.y;
+    goalie.react-=dt;
+    if(goalie.react<=0){
+      goalie.x+=clamp(shot.tx-goalie.x,-d.move*1.2*dt,d.move*1.2*dt);
+    }
+    if(t>=1){
+      const dx=Math.abs(shot.tx-goalie.x);
+      const verticalFactor=shot.ty<135?.76:1;
+      const saved=dx<d.save*verticalFactor*(1-shot.dekeBonus*.18)*(1-shot.power*.12);
+      endAttempt(!saved,saved?'SAVED!':'MISSED!');
+      shot=null;
+    }
+  }
 }
 function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
-function drawGoalie(){ctx.fillStyle='#f5f7fb';ctx.fillRect(goalie.x-31,168,62,72);ctx.fillStyle='#26456e';ctx.fillRect(goalie.x-48,222,96,22);circle(goalie.x,184,19,'#0f1722');ctx.strokeStyle='#dce8f2';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(goalie.x-25,205);ctx.lineTo(goalie.x-60,228);ctx.moveTo(goalie.x+25,205);ctx.lineTo(goalie.x+60,228);ctx.stroke()}
-function drawSkater(){circle(skater.x,skater.y-38,15,'#162033');ctx.fillStyle='#2a87e8';ctx.fillRect(skater.x-18,skater.y-25,36,48);ctx.strokeStyle='#263544';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(skater.x-10,skater.y+22);ctx.lineTo(skater.x-22,skater.y+52);ctx.moveTo(skater.x+10,skater.y+22);ctx.lineTo(skater.x+23,skater.y+52);ctx.stroke();ctx.strokeStyle='#5b3b20';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(skater.x+12,skater.y);ctx.lineTo(skater.x+38,skater.y+24);ctx.lineTo(skater.x+54,skater.y+22);ctx.stroke()}
-function draw(){ctx.fillStyle='#e2f7ff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#6cb1d9';ctx.lineWidth=3;for(let y=80;y<H;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}ctx.strokeStyle='#df4056';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,260);ctx.lineTo(W,260);ctx.stroke();ctx.fillStyle='#d7e9ee';ctx.fillRect(150,70,400,190);ctx.strokeStyle='#df3049';ctx.lineWidth=11;ctx.strokeRect(160,78,380,178);for(let x=175;x<535;x+=24){ctx.strokeStyle='#aabdc5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,84);ctx.lineTo(x,252);ctx.stroke()}drawGoalie();if(!shot)drawSkater();circle(puck.x,puck.y,11,'#111820');ctx.fillStyle='#0d2840cc';ctx.fillRect(18,18,175,58);ctx.fillStyle='#fff';ctx.font='700 15px system-ui';ctx.fillText('DEKES: '+dirChanges,30,43);ctx.fillText('ICE: '+Math.max(0,Math.round((skater.y-260)/4))+' ft',30,65);if(result){ctx.fillStyle='#06121dd5';ctx.fillRect(0,0,W,H);ctx.fillStyle=result==='GOAL!'?'#62f29b':'#ff7b8c';ctx.font='900 68px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2);ctx.textAlign='left'}}
+function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function drawGoalie(){
+  rounded(goalie.x-34,164,68,82,18,'#f5f7fb');
+  rounded(goalie.x-52,218,104,28,12,'#214873');
+  circle(goalie.x,181,20,'#111827');
+  ctx.strokeStyle='#ecf6ff';ctx.lineWidth=10;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(goalie.x-25,202);ctx.lineTo(goalie.x-65,225);ctx.moveTo(goalie.x+25,202);ctx.lineTo(goalie.x+65,225);ctx.stroke();
+}
+function drawSkater(){
+  circle(skater.x,skater.y-42,16,'#162033');
+  rounded(skater.x-20,skater.y-27,40,50,9,'#2582e5');
+  ctx.strokeStyle='#233445';ctx.lineWidth=8;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(skater.x-10,skater.y+20);ctx.lineTo(skater.x-25,skater.y+53);ctx.moveTo(skater.x+10,skater.y+20);ctx.lineTo(skater.x+26,skater.y+53);ctx.stroke();
+  ctx.strokeStyle='#604020';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(skater.x+12,skater.y-4);ctx.lineTo(skater.x+41,skater.y+24);ctx.lineTo(skater.x+58,skater.y+20);ctx.stroke();
+}
+function draw(){
+  ctx.fillStyle='#e1f7ff';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#a8d8e9';ctx.lineWidth=2;
+  for(let y=55;y<H;y+=95){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  ctx.strokeStyle='#df4056';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,270);ctx.lineTo(W,270);ctx.stroke();
+  ctx.fillStyle='#d4e8ee';ctx.fillRect(145,64,410,205);
+  ctx.strokeStyle='#df3049';ctx.lineWidth=11;ctx.strokeRect(155,72,390,190);
+  for(let x=170;x<545;x+=25){ctx.strokeStyle='#aebfc6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,78);ctx.lineTo(x,258);ctx.stroke()}
+  for(let y=90;y<258;y+=22){ctx.beginPath();ctx.moveTo(160,y);ctx.lineTo(540,y);ctx.stroke()}
+
+  drawGoalie();
+
+  ctx.strokeStyle='#27b8ff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(aim.x,aim.y,18,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(aim.x-27,aim.y);ctx.lineTo(aim.x+27,aim.y);ctx.moveTo(aim.x,aim.y-27);ctx.lineTo(aim.x,aim.y+27);ctx.stroke();
+
+  if(!shot)drawSkater();
+  circle(puck.x,puck.y,12,'#101820');
+
+  rounded(18,18,210,72,12,'#0c2944cc');
+  ctx.fillStyle='#fff';ctx.font='700 15px system-ui';
+  ctx.fillText('DEKES: '+dekes,32,44);
+  ctx.fillText('DISTANCE: '+Math.max(0,Math.round((skater.y-260)/4))+' ft',32,67);
+
+  if(flash){ctx.fillStyle='rgba(255,255,255,'+(flash*2.5)+')';ctx.fillRect(0,0,W,H)}
+  if(result){
+    ctx.fillStyle='#06121dd7';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=result==='GOAL!'?'#62f29b':'#ff7b8c';ctx.font='900 68px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2);ctx.textAlign='left';
+  }
+}
 function frame(now){const dt=Math.min((now-last)/1000,.033);last=now;update(dt);draw();requestAnimationFrame(frame)}
-function hold(id,key){const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[key]=true});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false))}
-hold('left','left');hold('right','right');$('shoot').onclick=takeShot;
-document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='a'||k==='arrowleft')keys.left=true;if(k==='d'||k==='arrowright')keys.right=true;if(e.code==='Space'&&!e.repeat){e.preventDefault();takeShot()}});document.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='a'||k==='arrowleft')keys.left=false;if(k==='d'||k==='arrowright')keys.right=false});
-document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{if(mode==='play'&&attempts>0)return;difficulty=+b.dataset.diff;hud()});$('start').onclick=start;
-window.addEventListener('blur',()=>{keys.left=keys.right=false});hud();resetAttempt();requestAnimationFrame(frame);
-</script></main></body></html>
+function hold(id,key){
+  const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[key]=true});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false));
+}
+hold('left','left');hold('right','right');
+$('shoot').addEventListener('pointerdown',e=>{e.preventDefault();$('shoot').setPointerCapture(e.pointerId);beginCharge()});
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>$('shoot').addEventListener(ev,()=>releaseShot()));
+
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='a'||k==='arrowleft'){keys.left=true;e.preventDefault()}
+  if(k==='d'||k==='arrowright'){keys.right=true;e.preventDefault()}
+  if(e.code==='Space'&&!e.repeat){e.preventDefault();beginCharge()}
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='a'||k==='arrowleft')keys.left=false;
+  if(k==='d'||k==='arrowright')keys.right=false;
+  if(e.code==='Space'){e.preventDefault();releaseShot()}
+});
+document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{if(mode==='play'&&attempts>0)return;difficulty=+b.dataset.diff;hud()});
+$('start').onclick=start;
+window.addEventListener('blur',()=>{keys.left=keys.right=false;charging=false});
+hud();resetAttempt();requestAnimationFrame(frame);
+</script>
+</main>
+</body>
+</html>
