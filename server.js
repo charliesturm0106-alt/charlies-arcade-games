@@ -10,6 +10,8 @@ const PORT = Number(process.env.PORT || 8080);
 const MAX_PLAYERS = 6;
 const WORLD_LIMIT = 500;
 const rooms = new Map();
+const sessions = new Map();
+const VERSION = '1.2.2';
 
 const app = express();
 app.disable('x-powered-by');
@@ -17,11 +19,43 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     service: 'arcade-city-multiplayer',
+    version: VERSION,
     rooms: rooms.size,
     players: [...rooms.values()].reduce((n, room) => n + room.size, 0)
   });
 });
-app.use(express.static(__dirname, { dotfiles: 'ignore', index: 'index.html' }));
+// The main arcade is on GitHub Pages; allow its HTTPS fallback to this server.
+app.use('/mp/exchange', (req, res, next) => {
+  if (req.headers.origin === 'https://charliesturm0106-alt.github.io') {
+    res.set('Access-Control-Allow-Origin', req.headers.origin);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+app.use(express.json({ limit: '8kb' }));
+app.post('/mp/exchange', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const { token, message } = req.body || {};
+  if (!validToken(token)) return res.status(400).json({ error: 'Invalid session.' });
+  const peer = getPeer(token);
+  if (!peer) return res.status(503).json({ error: 'Server busy. Try again.' });
+  peer.lastSeen = Date.now();
+  if (peer.socket) { const old = peer.socket; peer.socket = null; old.close(); }
+  if (message) receive(peer, message);
+  if (!peer.roomCode && (!message || message.type === 'state')) send(peer, { type: 'error', message: 'Room connection expired. Join the room again.' });
+  const messages = peer.queue.splice(0);
+  if (peer.roomCode) messages.push({ type: 'snapshot', players: roomPlayers(peer.roomCode) });
+  res.json({ messages });
+});
+// Serve only public game assets, never server source or dependencies.
+app.use((req, res, next) => {
+  if (req.path !== '/' && !/^\/[^/]+\.(html|css|png|jpg|svg|ico)$/.test(req.path) && req.path !== '/new-games.js') return res.sendStatus(404);
+  next();
+});
+app.use(express.static(__dirname, { dotfiles: 'ignore', index: 'index.html', maxAge: 0, setHeaders: res => res.setHeader('Cache-Control', 'no-cache') }));
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({
@@ -122,9 +156,11 @@ function leaveRoom(ws) {
 }
 
 function joinRoom(ws, mode, data) {
-  leaveRoom(ws);
-
   const roomCode = cleanRoom(data.room);
+  if (ws.roomCode === roomCode && rooms.get(roomCode)?.has(ws)) {
+    send(ws, { type: 'joined', id: rooms.get(roomCode).get(ws).player.id, room: roomCode, maxPlayers: MAX_PLAYERS, players: roomPlayers(roomCode) });
+    return;
+  }
   if (roomCode.length < 4) {
     send(ws, { type: 'error', message: 'Room code must be 4–6 letters/numbers.' });
     return;
@@ -148,6 +184,7 @@ function joinRoom(ws, mode, data) {
     return;
   }
 
+  leaveRoom(ws);
   const player = {
     id: crypto.randomUUID(),
     name: cleanName(data.name),
@@ -205,63 +242,51 @@ function updateState(ws, data) {
   broadcast(ws.roomCode, { type: 'state', player: publicPlayer(p) }, ws);
 }
 
-wss.on('connection', ws => {
-  ws.isAlive = true;
-  ws.roomCode = '';
-  ws.lastMessageAt = 0;
-
-  ws.on('pong', () => {
-    ws.isAlive = true;
-  });
-
-  ws.on('message', raw => {
-    if (raw.length > 8 * 1024) return;
-
-    const now = Date.now();
-    if (now - ws.lastMessageAt < 25) return;
-    ws.lastMessageAt = now;
-
-    let data;
-    try {
-      data = JSON.parse(raw.toString());
-    } catch (_) {
-      return;
+function validToken(token) { return typeof token === 'string' && /^[a-f0-9-]{36}$/.test(token); }
+function getPeer(token) {
+  if (sessions.has(token)) return sessions.get(token);
+  if (sessions.size >= 1000) return null;
+  const peer = { readyState: WebSocket.OPEN, roomCode: '', queue: [], socket: null, lastSeen: Date.now(), lastStateAt: 0,
+    send(raw) {
+      if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(raw);
+      else { this.queue.push(JSON.parse(raw)); if (this.queue.length > 100) this.queue.shift(); }
     }
-
-    if (!data || typeof data.type !== 'string') return;
-
-    if (data.type === 'create' || data.type === 'join') {
-      joinRoom(ws, data.type, data);
-      return;
-    }
-
-    if (data.type === 'state') {
-      updateState(ws, data);
-      return;
-    }
-
-    if (data.type === 'leave') {
-      leaveRoom(ws);
-    }
-  });
-
-  ws.on('close', () => leaveRoom(ws));
-  ws.on('error', () => leaveRoom(ws));
-});
-
-const heartbeat = setInterval(() => {
-  for (const ws of wss.clients) {
-    if (ws.isAlive === false) {
-      leaveRoom(ws);
-      ws.terminate();
-      continue;
-    }
-    ws.isAlive = false;
-    try {
-      ws.ping();
-    } catch (_) {}
+  };
+  sessions.set(token, peer);
+  return peer;
+}
+function receive(peer, data) {
+  if (!data || typeof data.type !== 'string') return;
+  if (data.type === 'create' || data.type === 'join') return joinRoom(peer, data.type, data);
+  if (data.type === 'leave') return leaveRoom(peer);
+  if (data.type === 'state' && Date.now() - peer.lastStateAt >= 25) {
+    peer.lastStateAt = Date.now(); updateState(peer, data);
   }
-}, 20000);
+}
+wss.on('connection', (socket, req) => {
+  const token = new URL(req.url, 'http://localhost').searchParams.get('token') || crypto.randomUUID();
+  if (!validToken(token)) return socket.close(1008, 'Invalid session');
+  const peer = getPeer(token);
+  if (!peer) return socket.close(1013, 'Server busy');
+  if (peer.socket) peer.socket.close();
+  peer.socket = socket; peer.lastSeen = Date.now();
+  for (const message of peer.queue.splice(0)) send(peer, message);
+  socket.on('pong', () => { peer.lastSeen = Date.now(); });
+  socket.on('message', raw => {
+    if (peer.socket !== socket) return;
+    peer.lastSeen = Date.now();
+    try { receive(peer, JSON.parse(raw.toString())); } catch (_) {}
+  });
+  socket.on('close', () => { if (peer.socket === socket) peer.socket = null; });
+  socket.on('error', () => {});
+});
+const heartbeat = setInterval(() => {
+  for (const [token, peer] of sessions) {
+    if (Date.now() - peer.lastSeen > 60000) {
+      leaveRoom(peer); peer.socket?.terminate(); sessions.delete(token);
+    } else if (peer.socket?.readyState === WebSocket.OPEN) peer.socket.ping();
+  }
+}, 10000);
 
 const snapshots = setInterval(() => {
   for (const roomCode of rooms.keys()) {
@@ -280,3 +305,4 @@ wss.on('close', () => {
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Arcade City multiplayer listening on port ${PORT}`);
 });
+

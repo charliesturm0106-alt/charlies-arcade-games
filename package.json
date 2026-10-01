@@ -1,11 +1,12 @@
 {
   "name": "charlies-arcade-games",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "private": true,
   "description": "Charlie's Arcade with Arcade City 3D private-room multiplayer",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:multiplayer": "node tests/multiplayer.cjs"
   },
   "engines": {
     "node": ">=20"
@@ -15,3 +16,4 @@
     "ws": "^8.18.0"
   }
 }
+
