@@ -4,9 +4,9 @@
 const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
 let mode='ready',difficulty=1,shotType=0,goals=0,shots=0,streak=0,best=+(localStorage.getItem('hs_hockey')||0),aim={x:350,y:190},charging=false,power=0,dir=1,puck={x:350,y:640,r:13,moving:false},goalie={x:350,y:245,target:350,react:0},result='',resultTime=0,last=0,soundOn=true,audio=null,stick={phase:'idle',angle:-0.42,target:-0.42,swingT:0,pending:null};
 const diffs=[
-{name:'Rookie',reaction:.50,move:250,saveRadius:42,guess:.20},
-{name:'Pro',reaction:.28,move:390,saveRadius:54,guess:.45},
-{name:'Elite',reaction:.12,move:560,saveRadius:65,guess:.70}
+{name:'Rookie',reaction:.30,move:350,saveRadius:64,guess:.48,readError:88,glove:.86},
+{name:'Pro',reaction:.16,move:510,saveRadius:80,guess:.72,readError:48,glove:.91},
+{name:'Elite',reaction:.07,move:690,saveRadius:96,guess:.92,readError:20,glove:.96}
 ],types=[
 {name:'Wrist',speed:820,accuracy:1.00,powerBonus:.10},
 {name:'Snap',speed:1000,accuracy:.94,powerBonus:.18},
@@ -28,7 +28,7 @@ function shoot(){
  const shotSpeed=t.speed*(.45+charged*(.65+t.powerBonus));
  goalie.react=d.reaction;
  const readShot=Math.random()<d.guess;
- goalie.target=readShot?tx:clamp(tx+(Math.random()-.5)*150,180,520);
+ goalie.target=readShot?tx:clamp(tx+(Math.random()-.5)*d.readError,170,530);
  stick.phase='swing';
  stick.swingT=0;
  stick.pending={tx,ty,shotSpeed};
@@ -39,7 +39,7 @@ c.addEventListener('pointermove',e=>setAim(e.clientX,e.clientY));c.addEventListe
 function beginCharge(){if(mode==='play'&&!puck.moving&&!result){charging=true}}
 $('shoot').addEventListener('pointerdown',e=>{e.preventDefault();beginCharge()});$('shoot').addEventListener('pointerup',e=>{e.preventDefault();shoot()});
 document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='p'&&!e.repeat){e.preventDefault();pause();return}if(e.code==='Space'&&!e.repeat){e.preventDefault();beginCharge()}});document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();shoot()}});
-document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;difficulty=+b.dataset.diff;hud()});document.querySelectorAll('.shotBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;shotType=+b.dataset.shot;hud()});$('reset').onclick=start;$('pause').onclick=pause;$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent='Sound: '+(soundOn?'On':'Off')};$('start').onclick=()=>mode==='pause'?pause():start;
+document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;difficulty=+b.dataset.diff;hud()});document.querySelectorAll('.shotBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;shotType=+b.dataset.shot;hud()});$('reset').onclick=start;$('pause').onclick=pause;$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent='Sound: '+(soundOn?'On':'Off')};$('start').onclick=()=>mode==='pause'?pause():start();
 function update(dt){
  if(mode!=='play')return;
  if(charging){
@@ -92,9 +92,10 @@ function update(dt){
      const inNet=puck.tx>150&&puck.tx<550&&puck.ty>88&&puck.ty<318;
      const dx=Math.abs(puck.tx-goalie.x);
      const verticalSave=puck.ty>145;
-     const gloveSave=puck.ty<=145&&dx<d.saveRadius*.72;
+     const gloveSave=puck.ty<=145&&dx<d.saveRadius*d.glove;
      const bodySave=verticalSave&&dx<d.saveRadius;
-     const saved=gloveSave||bodySave;
+     const desperationSave=!verticalSave&&dx<d.saveRadius*1.08&&Math.random()<(.18+difficulty*.08);
+     const saved=gloveSave||bodySave||desperationSave;
      const scored=inNet&&!saved;
      if(scored){goals++;streak++;result='GOAL!';beep(880)}else{streak=0;result=saved?'SAVED!':'MISSED!';beep(saved?220:320)}
      resultTime=1.05;hud();
