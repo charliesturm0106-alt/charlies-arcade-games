@@ -8,8 +8,6 @@
     margin: 0;
     overflow: hidden;
     font-family: 'Press Start 2P', sans-serif;
-    color: #0ff;
-    height: 100vh;
     background: linear-gradient(135deg, #000 0%, #001133 50%, #000 100%);
     background-size: 300% 300%;
     animation: bgMove 10s ease infinite;
@@ -19,30 +17,6 @@
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
-  }
-
-  /* Neon particles */
-  .particles {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-
-  .particle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: #0ff;
-    box-shadow: 0 0 10px #0ff;
-    border-radius: 50%;
-    animation: floatUp 6s linear infinite;
-    opacity: 0.7;
-  }
-
-  @keyframes floatUp {
-    from { transform: translateY(100vh); }
-    to { transform: translateY(-10vh); }
   }
 
   canvas {
@@ -58,7 +32,8 @@
     text-align: center;
     margin-top: 20px;
     font-size: 12px;
-    text-shadow: 0 0 10px #f0f;
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff;
   }
 
   .start-screen {
@@ -71,6 +46,7 @@
     justify-content: center;
     align-items: center;
     text-shadow: 0 0 10px #0ff;
+    font-size: 12px;
   }
 
   .btn {
@@ -91,8 +67,6 @@
 
 <body>
 
-<div class="particles"></div>
-
 <div class="start-screen" id="startScreen">
   <h1>NEON DINO RUN</h1>
   <p>Press SPACE to jump</p>
@@ -100,7 +74,7 @@
   <div class="btn" id="startBtn">START</div>
 </div>
 
-<canvas id="game" width="800" height="300"></canvas>
+<canvas id="game" width="900" height="300"></canvas>
 
 <div class="score-box">
   Score: <span id="score">0</span>  
@@ -108,51 +82,86 @@
 </div>
 
 <script>
-/* Neon particles */
-const particleContainer = document.querySelector('.particles');
-for (let i = 0; i < 40; i++) {
-  const p = document.createElement('div');
-  p.classList.add('particle');
-  p.style.left = Math.random() * 100 + 'vw';
-  p.style.animationDelay = Math.random() * 5 + 's';
-  particleContainer.appendChild(p);
-}
-
-/* Canvas setup */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let dino = {
-  x: 50,
-  y: 200,
-  width: 40,
-  height: 40,
-  dy: 0,
-  jumping: false
-};
-
-let obstacles = [];
 let score = 0;
 let highscore = localStorage.getItem("hs_dino") || 0;
 document.getElementById("highscore").innerText = highscore;
 
 let running = false;
 
-/* Draw neon dino */
-function drawDino() {
-  ctx.fillStyle = "#0ff";
+/* Neon Dino sprite (pixel art drawn manually) */
+function drawDino(x, y, frame) {
+  ctx.save();
+  ctx.translate(x, y);
   ctx.shadowColor = "#0ff";
   ctx.shadowBlur = 20;
-  ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+
+  ctx.fillStyle = "#0ff";
+
+  // Body
+  ctx.fillRect(0, 10, 40, 20);
+
+  // Head
+  ctx.fillRect(30, 0, 20, 20);
+
+  // Eye
+  ctx.fillStyle = "#f0f";
+  ctx.fillRect(42, 6, 6, 6);
+
+  ctx.fillStyle = "#0ff";
+
+  // Legs (animated)
+  if (frame % 20 < 10) {
+    ctx.fillRect(5, 30, 10, 10);
+    ctx.fillRect(25, 30, 10, 10);
+  } else {
+    ctx.fillRect(10, 30, 10, 10);
+    ctx.fillRect(30, 30, 10, 10);
+  }
+
+  ctx.restore();
 }
 
-/* Draw neon obstacle */
-function drawObstacle(o) {
-  ctx.fillStyle = "#f0f";
+/* Neon cactus obstacle */
+function drawCactus(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
   ctx.shadowColor = "#f0f";
   ctx.shadowBlur = 20;
-  ctx.fillRect(o.x, o.y, o.width, o.height);
+  ctx.fillStyle = "#f0f";
+
+  ctx.fillRect(0, 0, 20, 40);
+  ctx.fillRect(20, 10, 10, 20);
+  ctx.fillRect(-10, 10, 10, 20);
+
+  ctx.restore();
 }
+
+/* Parallax neon ground */
+function drawGround() {
+  ctx.strokeStyle = "#0ff";
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "#0ff";
+  ctx.shadowBlur = 15;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 250);
+  ctx.lineTo(900, 250);
+  ctx.stroke();
+}
+
+/* Game objects */
+let dino = {
+  x: 80,
+  y: 200,
+  dy: 0,
+  jumping: false
+};
+
+let obstacles = [];
+let frame = 0;
 
 /* Game loop */
 function update() {
@@ -160,7 +169,9 @@ function update() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Dino gravity
+  frame++;
+
+  // Gravity
   dino.y += dino.dy;
   dino.dy += 0.6;
 
@@ -171,29 +182,24 @@ function update() {
     dino.jumping = false;
   }
 
-  drawDino();
+  drawGround();
+  drawDino(dino.x, dino.y, frame);
 
-  // Spawn obstacles
+  // Spawn cactus
   if (Math.random() < 0.02) {
-    obstacles.push({
-      x: 800,
-      y: 220,
-      width: 30,
-      height: 30
-    });
+    obstacles.push({ x: 900, y: 210 });
   }
 
-  // Move obstacles
+  // Move + draw obstacles
   obstacles.forEach(o => {
-    o.x -= 6;
-    drawObstacle(o);
+    o.x -= 8;
+    drawCactus(o.x, o.y);
 
     // Collision
     if (
-      dino.x < o.x + o.width &&
-      dino.x + dino.width > o.x &&
-      dino.y < o.y + o.height &&
-      dino.y + dino.height > o.y
+      dino.x + 40 > o.x &&
+      dino.x < o.x + 20 &&
+      dino.y + 40 > o.y
     ) {
       running = false;
       localStorage.setItem("hs_dino", highscore);
