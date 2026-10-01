@@ -1,167 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake</title>
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
-  background:linear-gradient(135deg,#063f30,#0b5a40 55%,#05291f)
-}
-.top{padding:20px}
-a{color:white;text-decoration:none}
-canvas{
-  width:min(92vw,400px);height:auto;background:#0a2e24;
-  border:3px solid rgba(255,255,255,.2);border-radius:20px;
-  box-shadow:0 18px 45px rgba(0,0,0,.28)
-}
-.controls{
-  display:grid;grid-template-columns:70px 70px 70px;gap:8px;
-  justify-content:center;margin:18px auto 30px
-}
-.controls button{
-  height:60px;border:0;border-radius:15px;background:#2ad06b;color:white;
-  font-size:28px;font-weight:bold
-}
-.controls button:active{filter:brightness(.9)}
-.blank{visibility:hidden}
-#message{min-height:25px;color:#d8ffe5}
-</style>
-</head>
-<body>
-<div class="top">
-  <a href="index.html">← Back to Arcade</a>
-  <h1>🐍 Snake</h1>
-  <h2 id="score">Score: 0</h2>
-</div>
-
-<canvas id="game" width="400" height="400"></canvas>
-<p id="message">WASD / Arrow Keys / Touch</p>
-
-<div class="controls">
-  <button class="blank" type="button"></button>
-  <button id="up" type="button">▲</button>
-  <button class="blank" type="button"></button>
-  <button id="left" type="button">◀</button>
-  <button id="down" type="button">▼</button>
-  <button id="right" type="button">▶</button>
-</div>
-
-<script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const scoreText=document.getElementById("score");
-const message=document.getElementById("message");
-
-const CELL=20;
-const SIZE=400;
-
-let snake=[];
-let dx=CELL,dy=0,nextDx=CELL,nextDy=0;
-let food={x:100,y:100};
-let score=0;
-let gameOver=false;
-
-function makeFood(){
-  let f;
-  do{
-    f={
-      x:Math.floor(Math.random()*(SIZE/CELL))*CELL,
-      y:Math.floor(Math.random()*(SIZE/CELL))*CELL
-    };
-  }while(snake.some(p=>p.x===f.x&&p.y===f.y));
-  return f;
-}
-
-function reset(){
-  snake=[
-    {x:200,y:200},
-    {x:180,y:200},
-    {x:160,y:200}
-  ];
-  dx=CELL;dy=0;nextDx=CELL;nextDy=0;
-  score=0;gameOver=false;
-  food=makeFood();
-  scoreText.textContent="Score: 0";
-  message.textContent="WASD / Arrow Keys / Touch";
-  draw();
-}
-
-function setDirection(x,y){
-  if(gameOver){
-    reset();
-    return;
-  }
-  if(x===-dx&&y===-dy)return;
-  nextDx=x;
-  nextDy=y;
-}
-
-function update(){
-  if(gameOver)return;
-
-  dx=nextDx;
-  dy=nextDy;
-
-  const head={x:snake[0].x+dx,y:snake[0].y+dy};
-
-  const hitWall=head.x<0||head.y<0||head.x>=SIZE||head.y>=SIZE;
-  const hitSelf=snake.some(p=>p.x===head.x&&p.y===head.y);
-
-  if(hitWall||hitSelf){
-    gameOver=true;
-    message.textContent="Game Over — press a direction to restart";
-    return;
-  }
-
-  snake.unshift(head);
-
-  if(head.x===food.x&&head.y===food.y){
-    score++;
-    scoreText.textContent="Score: "+score;
-    food=makeFood();
-  }else{
-    snake.pop();
-  }
-
-  draw();
-}
-
-function draw(){
-  ctx.fillStyle="#0a2e24";
-  ctx.fillRect(0,0,SIZE,SIZE);
-
-  ctx.fillStyle="#ff5757";
-  ctx.beginPath();
-  ctx.arc(food.x+10,food.y+10,7,0,Math.PI*2);
-  ctx.fill();
-
-  snake.forEach((p,i)=>{
-    ctx.fillStyle=i===0?"#c2ff99":"#4ade80";
-    ctx.fillRect(p.x+1,p.y+1,18,18);
-  });
-}
-
-document.addEventListener("keydown",e=>{
-  const k=e.key.toLowerCase();
-  if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
-    e.preventDefault();
-  }
-  if(k==="w"||k==="arrowup")setDirection(0,-CELL);
-  if(k==="s"||k==="arrowdown")setDirection(0,CELL);
-  if(k==="a"||k==="arrowleft")setDirection(-CELL,0);
-  if(k==="d"||k==="arrowright")setDirection(CELL,0);
-});
-
-document.getElementById("up").addEventListener("click",()=>setDirection(0,-CELL));
-document.getElementById("down").addEventListener("click",()=>setDirection(0,CELL));
-document.getElementById("left").addEventListener("click",()=>setDirection(-CELL,0));
-document.getElementById("right").addEventListener("click",()=>setDirection(CELL,0));
-
-reset();
-setInterval(update,115);
-</script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08120e"><title>Snake Arena · Charlie's Arcade</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#153d2d,#07100c 58%);color:#f5fff9;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:16px 12px}main{width:min(100%,640px)}a{color:#a9c9b6;text-decoration:none;font-size:12px;font-weight:900}.head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:10px 0}.head h1{margin:6px 0 2px;font-size:30px;letter-spacing:-1px}.sub{margin:0;color:#88a697;font-size:11px}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.box{background:#0d1812;border:1px solid #294236;border-radius:13px;padding:9px}.box span{display:block;color:#789587;font-size:8px;font-weight:950}.box strong{font-size:17px}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}.toolbar button,.actions button{border:1px solid #315040;background:#102019;color:#dff9e8;border-radius:11px;padding:9px 11px;font-size:10px;font-weight:950}.toolbar button.active{background:linear-gradient(90deg,#43d67e,#77ec9d);color:#07140c;border-color:#7bed9f}.stage{position:relative;width:min(100%,500px);margin:auto;border-radius:22px;overflow:hidden;border:1px solid #345342;background:#08110d;box-shadow:0 24px 70px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#06100bdd;backdrop-filter:blur(6px);padding:22px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,360px);background:#0d1814ed;border:1px solid #345443;border-radius:18px;padding:20px}.panel h2{margin:0 0 7px;font-size:27px}.panel p{margin:0 0 16px;color:#97ae9f;font-size:11px;line-height:1.5}.primary{width:100%;border:0;border-radius:12px;padding:12px;background:linear-gradient(90deg,#46d77f,#8df3a9);color:#06120b;font-weight:1000}.actions{display:flex;gap:8px;width:min(100%,500px);margin:9px auto}.actions button{flex:1}.controls{display:grid;grid-template-columns:repeat(3,72px);gap:7px;justify-content:center;margin-top:10px}.controls button{height:56px;border:1px solid #315040;border-radius:14px;background:#102019;color:#fff;font-size:22px;font-weight:900;touch-action:none}.ghost{visibility:hidden}.help{text-align:center;color:#728d7e;font-size:10px;margin:8px 0 0}@media(min-width:760px){.controls{display:none}}@media(max-width:520px){.hud{grid-template-columns:repeat(2,1fr)}.head h1{font-size:25px}}
+</style></head><body><main><a href="index.html">← Arcade 2.0</a><div class="head"><div><h1>🐍 Snake Arena</h1><p class="sub">Classic snake with portals, speed modes, combos, and persistent best scores.</p></div></div><div class="hud"><div class="box"><span>SCORE</span><strong id="score">0</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div><div class="box"><span>COMBO</span><strong id="combo">x1</strong></div><div class="box"><span>MODE</span><strong id="modeHud">CLASSIC</strong></div></div><div class="toolbar" id="modes"><button data-mode="classic" class="active">Classic</button><button data-mode="portal">Portal</button><button data-mode="blitz">60s Blitz</button><button id="soundBtn">Sound: On</button></div><div class="stage"><canvas id="game" width="500" height="500"></canvas><div class="overlay" id="overlay"><div class="panel"><h2 id="title">Snake Arena</h2><p id="message">Eat food, keep your combo alive, and avoid your own trail. Portal mode wraps through walls. Blitz gives you 60 seconds.</p><button class="primary" id="start">START RUN</button></div></div></div><div class="actions"><button id="pause">Pause</button><button id="restart">Restart</button></div><div class="controls"><button class="ghost"></button><button data-dir="up">▲</button><button class="ghost"></button><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button></div><p class="help">WASD / arrows / swipe · P pauses · food gets faster as your score climbs.</p></main><script>
+const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id),N=25,C=20,S=N*C;
+let snake=[],dir={x:1,y:0},next={x:1,y:0},food={},bonus=null,score=0,best=+(localStorage.getItem('hs_snake')||0),combo=1,mode='classic',state='ready',last=0,acc=0,timeLeft=60,sound=true,audio=null,touch=null;
+$('best').textContent=best;
+function beep(f=480,d=.04){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+d);o.stop(audio.currentTime+d+.02)}catch(e){}}
+function rnd(){return Math.floor(Math.random()*N)}
+function makeFood(){let p;do{p={x:rnd(),y:rnd()}}while(snake.some(s=>s.x===p.x&&s.y===p.y));return p}
+function reset(){snake=[{x:12,y:12},{x:11,y:12},{x:10,y:12}];dir={x:1,y:0};next={x:1,y:0};food=makeFood();bonus=null;score=0;combo=1;timeLeft=60;acc=0;hud();draw()}
+function hud(){$('score').textContent=score;$('best').textContent=best;$('combo').textContent='x'+combo;$('modeHud').textContent=mode==='blitz'?Math.ceil(timeLeft)+'s':mode.toUpperCase()}
+function start(){reset();state='play';$('overlay').hidden=true;last=performance.now()}
+function over(msg='Run over'){state='over';if(score>best){best=score;localStorage.setItem('hs_snake',best)}hud();$('title').textContent=msg;$('message').textContent='Score '+score+' · Best '+best+'.';$('start').textContent='PLAY AGAIN';$('overlay').hidden=false;beep(120,.15)}
+function pause(){if(state==='play'){state='pause';$('title').textContent='Paused';$('message').textContent='Your run is safe.';$('start').textContent='RESUME';$('overlay').hidden=false}else if(state==='pause'){state='play';$('overlay').hidden=true;last=performance.now()}}
+function setDir(nx,ny){if(nx===-dir.x&&ny===-dir.y)return;next={x:nx,y:ny}}
+function step(){dir=next;let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(mode==='portal'){h.x=(h.x+N)%N;h.y=(h.y+N)%N}else if(h.x<0||h.x>=N||h.y<0||h.y>=N){over('Wall hit');return}if(snake.some((s,i)=>i>0&&s.x===h.x&&s.y===h.y)){over('Trail hit');return}snake.unshift(h);if(h.x===food.x&&h.y===food.y){score+=10*combo;combo=Math.min(5,combo+1);food=makeFood();if(score&&score%100===0)bonus=makeFood();beep(680)}else if(bonus&&h.x===bonus.x&&h.y===bonus.y){score+=50;combo=Math.min(5,combo+1);bonus=null;beep(900,.07)}else{snake.pop();combo=Math.max(1,combo-.02)}hud()}
+function draw(){x.fillStyle='#07110c';x.fillRect(0,0,S,S);x.strokeStyle='#173025';x.lineWidth=1;for(let i=0;i<=N;i++){x.beginPath();x.moveTo(i*C,0);x.lineTo(i*C,S);x.stroke();x.beginPath();x.moveTo(0,i*C);x.lineTo(S,i*C);x.stroke()}x.fillStyle='#ff6578';x.beginPath();x.arc(food.x*C+C/2,food.y*C+C/2,7,0,Math.PI*2);x.fill();if(bonus){x.fillStyle='#ffd85c';x.beginPath();x.arc(bonus.x*C+C/2,bonus.y*C+C/2,8,0,Math.PI*2);x.fill()}snake.forEach((s,i)=>{x.fillStyle=i===0?'#7df3a6':'#37cf76';x.fillRect(s.x*C+2,s.y*C+2,C-4,C-4)})}
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(state==='play'){if(mode==='blitz'){timeLeft-=dt;if(timeLeft<=0){timeLeft=0;over('Time!')}}acc+=dt;const speed=Math.max(.06,.14-score/3500);while(acc>=speed&&state==='play'){acc-=speed;step()}}draw();requestAnimationFrame(frame)}
+document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','p'].includes(k))e.preventDefault();if(k==='p')pause();if(k==='w'||k==='arrowup')setDir(0,-1);if(k==='s'||k==='arrowdown')setDir(0,1);if(k==='a'||k==='arrowleft')setDir(-1,0);if(k==='d'||k==='arrowright')setDir(1,0)});
+document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{const d=b.dataset.dir;if(d==='up')setDir(0,-1);if(d==='down')setDir(0,1);if(d==='left')setDir(-1,0);if(d==='right')setDir(1,0)});
+c.addEventListener('pointerdown',e=>{touch={x:e.clientX,y:e.clientY}});c.addEventListener('pointerup',e=>{if(!touch)return;const dx=e.clientX-touch.x,dy=e.clientY-touch.y;if(Math.max(Math.abs(dx),Math.abs(dy))>18){Math.abs(dx)>Math.abs(dy)?setDir(Math.sign(dx),0):setDir(0,Math.sign(dy))}touch=null});
+$('modes').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b||state==='play')return;mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(q=>q.classList.toggle('active',q===b));reset()};$('soundBtn').onclick=()=>{sound=!sound;$('soundBtn').textContent='Sound: '+(sound?'On':'Off')};$('start').onclick=()=>state==='pause'?pause():start();$('pause').onclick=pause;$('restart').onclick=start;window.addEventListener('blur',()=>{if(state==='play')pause()});reset();requestAnimationFrame(frame);
+</script></body></html>
