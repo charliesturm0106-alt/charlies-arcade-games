@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d15">
-<title>Idle Empire · Charlie's Arcade</title>
+<title>Idle Empire 2 · Charlie's Arcade</title>
 <style>
 :root{
  --bg:#090c13;--panel:#111722;--panel2:#161e2c;--line:#283346;--text:#f7f9fc;
@@ -188,7 +188,7 @@ a{color:inherit}
 
 var SAVE_KEY="charlie_idle_empire_v1";
 var BACKUP_KEY="charlie_idle_empire_backup_v1";
-var VERSION=2;
+var VERSION=3;
 var buyMode="1";
 var lastTick=Date.now();
 var lastUi=0;
@@ -668,7 +668,7 @@ document.addEventListener("visibilitychange",function(){if(document.hidden)save(
 window.addEventListener("beforeunload",save);
 setInterval(save,12000);
 
-var loaded=load();
+try{var rr=JSON.parse(localStorage.getItem('charlie_recent')||'[]').filter(function(x){return x.href!=='idle.html'});rr.unshift({name:'Idle Empire',href:'idle.html'});localStorage.setItem('charlie_recent',JSON.stringify(rr.slice(0,6)))}catch(e){}var loaded=load();
 if(hasNode("startermgr"))state.biz[0].manager=true;
 if(loaded)offline();
 checkAchievements();renderAll();lastTick=Date.now();requestAnimationFrame(tick);
