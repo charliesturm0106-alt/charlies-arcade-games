@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b12">
+<title>Drift Racer · Charlie's Arcade</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#1c2435,#080b12 58%);color:#f6f8ff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}
+main{width:min(100%,980px)}
+a{color:#aebbd1;text-decoration:none;font-size:14px;font-weight:800}
+.head{margin:12px 0 14px}.head h1{font-size:32px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8792a8;font-size:13px}
+.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}
+.box{background:#101522;border:1px solid #252d3d;border-radius:14px;padding:10px 12px}.box span{display:block;color:#78849a;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:18px}
+.stage{position:relative;border:1px solid #2a3344;border-radius:22px;overflow:hidden;background:#17261c;box-shadow:0 24px 70px #0009}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#080b12d8;backdrop-filter:blur(5px);padding:24px;text-align:center}
+.overlay[hidden]{display:none}
+.panel{width:min(100%,440px);padding:24px;background:#101522ee;border:1px solid #303b50;border-radius:20px}.panel h2{font-size:29px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.55;color:#9ca8bb;margin:0 0 18px}
+.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#ff7a2e,#ffb334)}
+.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}
+.controls button{padding:14px 5px;border-radius:12px;border:1px solid #2c374a;background:#121925;color:#eef3ff;font-weight:900;touch-action:none}
+.controls .drift{background:linear-gradient(90deg,#d43bff,#7f57ff)}
+.status{text-align:center;color:#7f8aa0;font-size:12px;margin:11px 0 0;line-height:1.5}
+@media(max-width:650px){.hud{grid-template-columns:repeat(2,1fr)}.controls{grid-template-columns:repeat(3,1fr)}.head h1{font-size:27px}.box:last-child{grid-column:span 2}}
+</style>
+</head>
+<body>
+<main>
+<a href="index.html">← Back to Arcade</a>
+<div class="head"><h1>🏎️ Drift Racer</h1><p class="sub">Three laps. Brake late. Throw it sideways.</p></div>
+
+<div class="hud">
+  <div class="box"><span>LAP</span><strong id="lap">1 / 3</strong></div>
+  <div class="box"><span>SPEED</span><strong id="speed">0 MPH</strong></div>
+  <div class="box"><span>LAP TIME</span><strong id="lapTime">0:00.000</strong></div>
+  <div class="box"><span>BEST LAP</span><strong id="best">--:--.---</strong></div>
+  <div class="box"><span>DRIFT</span><strong id="driftScore">0</strong></div>
+</div>
+
+<div class="stage">
+  <canvas id="game" width="900" height="650"></canvas>
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="title">Drift Racer</h2>
+      <p id="message"><b>W/S</b> = gas/brake, <b>A/D</b> = steer, <b>Space</b> = handbrake. Complete 3 laps and hit every checkpoint. Bigger sideways drifts build bigger combos.</p>
+      <button class="primary" id="start">Start Race</button>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="left">◀ LEFT</button>
+  <button id="gas">GAS</button>
+  <button id="brake">BRAKE</button>
+  <button id="right">RIGHT ▶</button>
+  <button id="handbrake" class="drift">DRIFT</button>
+</div>
+<p class="status">WASD or arrows to drive · Space/Shift = handbrake · R = restart</p>
+
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
+const keys={left:false,right:false,gas:false,brake:false,handbrake:false};
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const TAU=Math.PI*2;
+
+let mode='ready',last=0,countdown=3,raceTime=0,lapStart=0,lap=1,nextCP=0;
+let driftCombo=0,driftBank=0,drifting=false,offTrack=false,marks=[],sparks=[];
+let bestLap=+(localStorage.getItem('drift_best_lap')||0);
+let bestGhost=[];
+try{bestGhost=JSON.parse(localStorage.getItem('drift_best_ghost')||'[]')}catch(e){bestGhost=[]}
+let currentGhost=[],ghostTimer=0;
+
+const car={x:450,y:548,angle:Math.PI,vx:0,vy:0,w:24,h:42};
+const checkpoints=[
+  {x:760,y:250,w:95,h:150,label:'1'},
+  {x:400,y:70,w:100,h:95,label:'2'},
+  {x:45,y:250,w:95,h:150,label:'3'},
+  {x:395,y:515,w:110,h:95,label:'START'}
+];
+
+function fmt(ms){
+  if(!ms)return '--:--.---';
+  const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),z=Math.floor(ms%1000);
+  return m+':'+String(s).padStart(2,'0')+'.'+String(z).padStart(3,'0');
+}
+
+function hud(){
+  $('lap').textContent=Math.min(lap,3)+' / 3';
+  $('speed').textContent=Math.round(Math.hypot(car.vx,car.vy)*.42)+' MPH';
+  $('lapTime').textContent=fmt(Math.max(0,raceTime-lapStart));
+  $('best').textContent=fmt(bestLap);
+  $('driftScore').textContent=Math.floor(driftBank+(drifting?driftCombo:0));
+}
+
+function resetCar(){
+  car.x=450;car.y=548;car.angle=Math.PI;car.vx=0;car.vy=0;
+}
+
+function start(){
+  mode='countdown';countdown=3;raceTime=0;lapStart=0;lap=1;nextCP=0;
+  driftCombo=0;driftBank=0;drifting=false;marks=[];sparks=[];currentGhost=[];ghostTimer=0;
+  resetCar();
+  $('overlay').hidden=true;
+  last=performance.now();
+  hud();
+}
+
+function finishRace(){
+  mode='finished';
+  $('title').textContent='Race Complete';
+  $('message').textContent='Finished 3 laps. Best lap: '+fmt(bestLap)+' · Drift score: '+Math.floor(driftBank)+'.';
+  $('start').textContent='Race Again';
+  $('overlay').hidden=false;
+}
+
+function ellipseValue(x,y,rx,ry){
+  const dx=(x-W/2)/rx,dy=(y-H/2)/ry;
+  return dx*dx+dy*dy;
+}
+function isTrack(x,y){
+  return ellipseValue(x,y,405,285)<=1 && ellipseValue(x,y,222,120)>=1;
+}
+function inRect(p,r){return p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h}
+
+function crossCheckpoints(){
+  const cp=checkpoints[nextCP];
+  if(inRect(car,cp)){
+    if(nextCP===3){
+      const lapMs=raceTime-lapStart;
+      if(lapMs>5000){
+        if(!bestLap||lapMs<bestLap){
+          bestLap=lapMs;
+          localStorage.setItem('drift_best_lap',bestLap);
+          bestGhost=currentGhost.slice();
+          localStorage.setItem('drift_best_ghost',JSON.stringify(bestGhost));
+        }
+        lap++;
+        lapStart=raceTime;
+        currentGhost=[];
+        ghostTimer=0;
+        if(lap>3){finishRace();return}
+      }
+      nextCP=0;
+    }else nextCP++;
+  }
+}
+
+function updatePhysics(dt){
+  const forwardX=Math.sin(car.angle),forwardY=-Math.cos(car.angle);
+  const rightX=Math.cos(car.angle),rightY=Math.sin(car.angle);
+  let forwardSpeed=car.vx*forwardX+car.vy*forwardY;
+  let lateralSpeed=car.vx*rightX+car.vy*rightY;
+
+  const gas=keys.gas?1:0,brake=keys.brake?1:0;
+  if(gas) forwardSpeed+=390*dt;
+  if(brake){
+    if(forwardSpeed>20)forwardSpeed-=560*dt;
+    else forwardSpeed-=220*dt;
+  }
+
+  forwardSpeed=clamp(forwardSpeed,-105,430);
+  const speedAbs=Math.abs(forwardSpeed);
+
+  let steer=(keys.right?1:0)-(keys.left?1:0);
+  const steerStrength=(.55+Math.min(1,speedAbs/130)*1.45)*(keys.handbrake?1.38:1);
+  if(speedAbs>8) car.angle+=steer*steerStrength*dt*(forwardSpeed>=0?1:-1);
+
+  const grip=keys.handbrake?.955:.83;
+  lateralSpeed*=Math.pow(grip,dt*60);
+
+  if(keys.handbrake&&speedAbs>95&&steer){
+    lateralSpeed+=steer*140*dt;
+  }
+
+  forwardSpeed*=Math.pow(offTrack?.965:.992,dt*60);
+  if(offTrack)forwardSpeed=clamp(forwardSpeed,-75,185);
+
+  car.vx=forwardX*forwardSpeed+rightX*lateralSpeed;
+  car.vy=forwardY*forwardSpeed+rightY*lateralSpeed;
+  car.x+=car.vx*dt;
+  car.y+=car.vy*dt;
+
+  if(car.x<12||car.x>W-12){car.x=clamp(car.x,12,W-12);car.vx*=-.35}
+  if(car.y<12||car.y>H-12){car.y=clamp(car.y,12,H-12);car.vy*=-.35}
+
+  offTrack=!isTrack(car.x,car.y);
+
+  const slip=Math.abs(Math.atan2(lateralSpeed,Math.max(25,Math.abs(forwardSpeed))));
+  const nowDrifting=!offTrack&&speedAbs>105&&slip>.16;
+
+  if(nowDrifting){
+    drifting=true;
+    driftCombo+=dt*(speedAbs*.12+slip*220);
+    if(Math.random()<dt*25){
+      const backX=car.x-forwardX*18,backY=car.y-forwardY*18;
+      marks.push({x:backX-rightX*8,y:backY-rightY*8,a:.5});
+      marks.push({x:backX+rightX*8,y:backY+rightY*8,a:.5});
+    }
+  }else if(drifting){
+    driftBank+=driftCombo;
+    driftCombo=0;
+    drifting=false;
+  }
+
+  if(offTrack&&drifting){driftCombo=0;drifting=false}
+
+  marks.forEach(m=>m.a-=dt*.03);
+  marks=marks.filter(m=>m.a>0);
+
+  ghostTimer+=dt;
+  if(ghostTimer>=.06){
+    ghostTimer=0;
+    currentGhost.push({t:raceTime-lapStart,x:car.x,y:car.y,a:car.angle});
+    if(currentGhost.length>1500)currentGhost.shift();
+  }
+}
+
+function update(dt){
+  if(mode==='countdown'){
+    countdown-=dt;
+    if(countdown<=0){mode='race';raceTime=0;lapStart=0}
+    return;
+  }
+  if(mode!=='race')return;
+
+  raceTime+=dt*1000;
+  updatePhysics(dt);
+  crossCheckpoints();
+  hud();
+}
+
+function drawTrack(){
+  ctx.fillStyle='#233d28';ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(W/2,H/2);
+  ctx.fillStyle='#343940';
+  ctx.beginPath();ctx.ellipse(0,0,405,285,0,0,TAU);ctx.fill();
+  ctx.fillStyle='#29472d';
+  ctx.beginPath();ctx.ellipse(0,0,222,120,0,0,TAU);ctx.fill();
+
+  ctx.strokeStyle='#d7dbe0';ctx.lineWidth=4;
+  ctx.beginPath();ctx.ellipse(0,0,398,278,0,0,TAU);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,0,230,128,0,0,TAU);ctx.stroke();
+
+  ctx.setLineDash([22,22]);ctx.strokeStyle='#aeb4bd';ctx.lineWidth=3;
+  ctx.beginPath();ctx.ellipse(0,0,314,204,0,0,TAU);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.fillStyle='#fff';
+  for(let i=0;i<10;i++){
+    ctx.fillStyle=i%2?'#111':'#fff';
+    ctx.fillRect(410+i*9,508,9,34);
+  }
+
+  checkpoints.forEach((cp,i)=>{
+    if(i===nextCP&&mode==='race'){
+      ctx.fillStyle='rgba(255,204,68,.12)';
+      ctx.fillRect(cp.x,cp.y,cp.w,cp.h);
+      ctx.strokeStyle='rgba(255,204,68,.75)';
+      ctx.lineWidth=2;ctx.strokeRect(cp.x,cp.y,cp.w,cp.h);
+    }
+  });
+}
+
+function drawGhost(){
+  if(!bestGhost.length||mode!=='race')return;
+  const t=raceTime-lapStart;
+  let g=null;
+  for(let i=0;i<bestGhost.length;i++){
+    if(bestGhost[i].t>=t){g=bestGhost[i];break}
+  }
+  if(!g)return;
+  ctx.save();
+  ctx.globalAlpha=.28;
+  ctx.translate(g.x,g.y);ctx.rotate(g.a);
+  ctx.fillStyle='#69d8ff';ctx.fillRect(-12,-21,24,42);
+  ctx.fillStyle='#dff8ff';ctx.fillRect(-8,-15,16,12);
+  ctx.restore();
+}
+
+function drawCar(){
+  ctx.save();
+  ctx.translate(car.x,car.y);ctx.rotate(car.angle);
+
+  ctx.fillStyle=offTrack?'#ff9a3c':'#ff6538';
+  ctx.beginPath();ctx.roundRect(-12,-21,24,42,6);ctx.fill();
+
+  ctx.fillStyle='#bfe9ff';
+  ctx.beginPath();ctx.roundRect(-8,-13,16,12,3);ctx.fill();
+  ctx.fillStyle='#1a2230';ctx.fillRect(-8,5,16,8);
+
+  ctx.fillStyle='#090b0f';
+  ctx.fillRect(-15,-15,4,10);ctx.fillRect(11,-15,4,10);
+  ctx.fillRect(-15,7,4,10);ctx.fillRect(11,7,4,10);
+
+  if(keys.brake){
+    ctx.fillStyle='#ff243d';
+    ctx.fillRect(-9,18,6,3);ctx.fillRect(3,18,6,3);
+  }
+  ctx.restore();
+}
+
+function draw(){
+  drawTrack();
+
+  marks.forEach(m=>{
+    ctx.fillStyle='rgba(18,20,22,'+Math.min(.36,m.a)+')';
+    ctx.beginPath();ctx.arc(m.x,m.y,3,0,TAU);ctx.fill();
+  });
+
+  drawGhost();
+  drawCar();
+
+  if(mode==='countdown'){
+    ctx.fillStyle='rgba(5,8,12,.38)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff';ctx.font='900 100px system-ui';ctx.textAlign='center';
+    const n=Math.ceil(countdown);
+    ctx.fillText(n>0?n:'GO!',W/2,H/2+30);
+    ctx.textAlign='left';
+  }
+
+  if(mode==='race'){
+    ctx.fillStyle='#101522dd';
+    ctx.beginPath();ctx.roundRect(18,18,220,82,14);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='800 16px system-ui';
+    ctx.fillText('CHECKPOINT '+(nextCP+1)+' / 4',34,47);
+    if(drifting){
+      ctx.fillStyle='#d65cff';ctx.font='900 18px system-ui';
+      ctx.fillText('DRIFT +'+Math.floor(driftCombo),34,76);
+    }else{
+      ctx.fillStyle='#9aa6b9';ctx.font='700 14px system-ui';
+      ctx.fillText(offTrack?'OFF TRACK - SLOWDOWN':'Hit Space to drift',34,76);
+    }
+  }
+}
+
+function frame(now){
+  const dt=Math.min((now-last)/1000,.033);
+  last=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function bindHold(id,key){
+  const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[key]=true});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false));
+}
+bindHold('left','left');
+bindHold('right','right');
+bindHold('gas','gas');
+bindHold('brake','brake');
+bindHold('handbrake','handbrake');
+
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','shift','r'].includes(k))e.preventDefault();
+  if(k==='w'||k==='arrowup')keys.gas=true;
+  if(k==='s'||k==='arrowdown')keys.brake=true;
+  if(k==='a'||k==='arrowleft')keys.left=true;
+  if(k==='d'||k==='arrowright')keys.right=true;
+  if(k===' '||k==='shift')keys.handbrake=true;
+  if(k==='r'&&!e.repeat)start();
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')keys.gas=false;
+  if(k==='s'||k==='arrowdown')keys.brake=false;
+  if(k==='a'||k==='arrowleft')keys.left=false;
+  if(k==='d'||k==='arrowright')keys.right=false;
+  if(k===' '||k==='shift')keys.handbrake=false;
+});
+
+$('start').onclick=start;
+window.addEventListener('blur',()=>{Object.keys(keys).forEach(k=>keys[k]=false)});
+hud();
+requestAnimationFrame(frame);
+</script>
+</main>
+</body>
+</html>
