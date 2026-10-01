@@ -1,357 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Charlie’s Neon Arcade</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: linear-gradient(135deg, #000 0%, #001133 50%, #000 100%);
-      background-size: 300% 300%;
-      animation: bgMove 10s ease infinite;
-      color: #fff;
-      font-family: 'Press Start 2P', sans-serif;
-      min-height: 100vh;
-    }
-
-    @keyframes bgMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* NAVBAR */
-    .navbar {
-      background: #080808;
-      padding: 15px 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 3px solid #0ff;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 0 15px #0ff;
-    }
-
-    .logo {
-      font-size: 14px;
-      color: #0ff;
-      text-shadow: 0 0 10px #0ff;
-    }
-
-    .nav-links {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      font-size: 10px;
-    }
-
-    .nav-links a {
-      text-decoration: none;
-      color: #0ff;
-      position: relative;
-    }
-
-    .nav-links a::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: -3px;
-      width: 0;
-      height: 2px;
-      background: #f0f;
-      transition: width 0.2s;
-    }
-
-    .nav-links a:hover::after {
-      width: 100%;
-    }
-
-    .wrapper {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 30px 15px 60px;
-    }
-
-    .hero {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .hero h1 {
-      font-size: 22px;
-      margin-bottom: 10px;
-      text-shadow: 0 0 12px #0ff;
-    }
-
-    .hero p {
-      font-size: 11px;
-      color: #ccc;
-    }
-
-    /* GAME GRID */
-    .game-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 25px;
-      margin-top: 40px;
-    }
-
-    .game-card {
-      background: rgba(10, 10, 20, 0.9);
-      border: 2px solid #0ff;
-      border-radius: 12px;
-      padding: 18px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
-      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .game-card:hover {
-      transform: scale(1.08);
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-      border-color: #f0f;
-    }
-
-    /* Neon badge */
-    .badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #f0f;
-      color: #000;
-      padding: 4px 8px;
-      font-size: 8px;
-      border-radius: 4px;
-      box-shadow: 0 0 10px #f0f;
-    }
-
-    .badge.hot { background: #ff0; box-shadow: 0 0 10px #ff0; }
-    .badge.new { background: #0f0; box-shadow: 0 0 10px #0f0; }
-
-    .game-thumb {
-      width: 100%;
-      height: 130px;
-      background: linear-gradient(135deg, #0ff3, #f0f3);
-      border-radius: 8px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #fff;
-      text-shadow: 0 0 10px #fff;
-      box-shadow: inset 0 0 20px #000;
-    }
-
-    .game-card h3 {
-      font-size: 14px;
-      margin-bottom: 8px;
-      text-shadow: 0 0 8px #0ff;
-    }
-
-    .game-desc {
-      font-size: 10px;
-      color: #bbb;
-      margin-bottom: 12px;
-      min-height: 30px;
-    }
-
-    .play-btn {
-      display: inline-block;
-      margin-top: 5px;
-      padding: 10px 14px;
-      background: linear-gradient(90deg, #0ff, #f0f);
-      color: #000;
-      border-radius: 6px;
-      font-size: 10px;
-      text-decoration: none;
-      box-shadow: 0 0 12px rgba(0, 255, 255, 0.7);
-    }
-
-    .play-btn:hover {
-      filter: brightness(1.2);
-    }
-
-    /* HIGH SCORES */
-    .scores-panel {
-      margin-top: 50px;
-      padding: 20px;
-      border-radius: 12px;
-      border: 2px solid #f0f;
-      background: #120012;
-      box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-    }
-
-    .scores-panel h2 {
-      font-size: 16px;
-      margin-bottom: 12px;
-      color: #f0f;
-      text-shadow: 0 0 10px #f0f;
-    }
-
-    .scores-list {
-      font-size: 10px;
-      color: #ddd;
-      list-style: none;
-    }
-
-    .scores-list li {
-      margin-bottom: 6px;
-    }
-
-    .footer {
-      margin-top: 50px;
-      text-align: center;
-      font-size: 9px;
-      color: #777;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b14">
+<title>Charlie's Arcade</title>
+<style>
+:root{--bg:#090b14;--panel:#111522;--panel2:#171c2c;--text:#f5f7ff;--muted:#8d96ad;--line:#242b40;--accent:#7c5cff;--accent2:#21d4fd}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 20% 0,#17133a 0,transparent 35%),radial-gradient(circle at 90% 20%,#0c2940 0,transparent 30%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,a{font:inherit}.topbar{position:sticky;top:0;z-index:20;background:rgba(9,11,20,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07)}.nav{max-width:1180px;margin:auto;height:72px;padding:0 22px;display:flex;align-items:center;gap:18px}.brand{display:flex;align-items:center;gap:11px;font-weight:900;letter-spacing:-.4px;font-size:19px;white-space:nowrap}.brandmark{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 24px #6f55ff44}.navlinks{display:flex;gap:8px;margin-left:auto}.navlinks a{color:var(--muted);text-decoration:none;padding:9px 12px;border-radius:10px;font-weight:700;font-size:14px}.navlinks a:hover{background:#ffffff0a;color:white}
+.wrap{max-width:1180px;margin:auto;padding:0 22px 70px}.hero{padding:72px 0 38px;display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:end}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:#c9c2ff;font-size:13px;font-weight:800;background:#7c5cff18;border:1px solid #8b72ff38;padding:8px 11px;border-radius:999px}.dot{width:7px;height:7px;background:#5dffb2;border-radius:50%;box-shadow:0 0 12px #5dffb2}.hero h1{font-size:clamp(42px,7vw,78px);line-height:.98;letter-spacing:-4px;margin:17px 0 16px;max-width:760px}.gradient{background:linear-gradient(90deg,#a995ff,#52dcff);-webkit-background-clip:text;background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:17px;line-height:1.6;max-width:650px;margin:0}.heroStats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat{background:#ffffff08;border:1px solid #ffffff0c;border-radius:18px;padding:18px}.stat strong{font-size:27px;display:block}.stat span{font-size:12px;color:var(--muted);font-weight:700}
+.toolbar{display:flex;gap:12px;margin:22px 0 26px}.search{position:relative;flex:1}.search input{width:100%;height:50px;border:1px solid var(--line);background:#101421;color:white;border-radius:14px;padding:0 16px 0 45px;outline:none}.search input:focus{border-color:#7765dd;box-shadow:0 0 0 3px #7765dd1d}.searchIcon{position:absolute;left:16px;top:14px;color:var(--muted)}.random{border:1px solid var(--line);background:#171c2c;color:white;border-radius:14px;padding:0 18px;font-weight:800;cursor:pointer}.random:hover{border-color:#6f62c5;transform:translateY(-1px)}
+.sectionHead{display:flex;align-items:end;justify-content:space-between;margin:14px 0 16px}.sectionHead h2{margin:0;font-size:23px;letter-spacing:-.5px}.sectionHead span{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{position:relative;display:flex;flex-direction:column;min-height:245px;background:linear-gradient(160deg,#171c2c,#10131e);border:1px solid var(--line);border-radius:20px;padding:18px;text-decoration:none;color:white;overflow:hidden;transition:.2s ease;isolation:isolate}.card:before{content:"";position:absolute;width:160px;height:160px;border-radius:50%;right:-55px;top:-55px;background:var(--glow,#7c5cff);filter:blur(55px);opacity:.22;z-index:-1}.card:hover{transform:translateY(-5px);border-color:#ffffff32;box-shadow:0 18px 45px #0000004a}.icon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;font-size:31px;background:#ffffff0b;border:1px solid #ffffff0d;margin-bottom:28px}.tag{position:absolute;right:15px;top:15px;color:#d7d9e3;background:#ffffff0b;border:1px solid #ffffff10;padding:6px 8px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}.card h3{font-size:18px;margin:0 0 7px}.card p{font-size:13px;line-height:1.45;color:var(--muted);margin:0 0 16px}.play{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:900}.arrow{width:31px;height:31px;border-radius:10px;background:#ffffff0b;display:grid;place-items:center}.empty{display:none;text-align:center;color:var(--muted);padding:50px 10px;border:1px dashed var(--line);border-radius:18px}
+.recent{margin-top:42px}.recentRow{display:flex;gap:10px;flex-wrap:wrap}.recentChip{color:#dfe3f1;text-decoration:none;background:#121725;border:1px solid var(--line);padding:10px 13px;border-radius:12px;font-size:13px;font-weight:750}.footer{border-top:1px solid #ffffff0a;margin-top:55px;padding-top:24px;color:#687187;font-size:12px;display:flex;justify-content:space-between}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.heroStats{max-width:420px}.grid{grid-template-columns:repeat(2,1fr)}.hero h1{letter-spacing:-2.5px}.navlinks{display:none}}
+@media(max-width:560px){.nav{height:64px}.wrap{padding:0 15px 50px}.hero{padding-top:45px}.hero h1{font-size:45px}.hero p{font-size:15px}.grid{grid-template-columns:1fr}.toolbar{flex-direction:column}.random{height:48px}.card{min-height:215px}.icon{margin-bottom:20px}.footer{gap:12px;flex-direction:column}}
+</style>
 </head>
-
 <body>
-
-  <nav class="navbar">
-    <div class="logo">Charlie’s Neon Arcade</div>
-    <ul class="nav-links">
-      <li><a href="#">Home</a></li>
-      <li><a href="#games">Games</a></li>
-      <li><a href="#scores">High Scores</a></li>
-      <li><a href="#about">About</a></li>
-    </ul>
-  </nav>
-
-  <div class="wrapper">
-
-    <section class="hero">
-      <h1>Welcome to Charlie’s Neon Arcade</h1>
-      <p>Pick a game. Beat the score. Glow harder.</p>
-    </section>
-
-    <section id="games">
-      <div class="game-grid">
-
-        <!-- SNAKE -->
-        <div class="game-card">
-          <div class="game-thumb">🐍</div>
-          <h3>Snake</h3>
-          <p class="game-desc">Classic snake. Don’t crash.</p>
-          <a href="snake.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- PONG -->
-        <div class="game-card">
-          <div class="game-thumb">🏓</div>
-          <h3>Pong</h3>
-          <p class="game-desc">Retro paddle battle.</p>
-          <a href="pong.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- REACTION -->
-        <div class="game-card">
-          <div class="game-thumb">⚡</div>
-          <h3>Reaction Test</h3>
-          <p class="game-desc">How fast are you really?</p>
-          <a href="reaction.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- BREAKOUT -->
-        <div class="game-card">
-          <div class="game-thumb">🧱</div>
-          <h3>Breakout</h3>
-          <p class="game-desc">Destroy every brick.</p>
-          <a href="breakout.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- FLAPPY -->
-        <div class="game-card">
-          <div class="game-thumb">🐦</div>
-          <h3>Flappy Flight</h3>
-          <p class="game-desc">Don’t hit the pipes.</p>
-          <a href="flappy.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- TRAFFIC -->
-        <div class="game-card">
-          <div class="game-thumb">🚗</div>
-          <h3>Traffic Dodger</h3>
-          <p class="game-desc">Dodge cars. Stay alive.</p>
-          <a href="traffic.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- NEON TETRIS -->
-        <div class="game-card">
-          <div class="badge hot">HOT</div>
-          <div class="game-thumb">🔷</div>
-          <h3>Neon Tetris</h3>
-          <p class="game-desc">Glow. Rotate. Clear lines.</p>
-          <a href="tetris.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- NEON DINO -->
-        <div class="game-card">
-          <div class="badge new">NEW</div>
-          <div class="game-thumb">🦖</div>
-          <h3>Neon Dino Run</h3>
-          <p class="game-desc">Jump. Dodge. Glow.</p>
-          <a href="neon-dino.html" class="play-btn">Play</a>
-        </div>
-
-        <!-- SPACE SHOOTER -->
-        <div class="game-card">
-          <div class="game-thumb">🚀</div>
-          <h3>Space Shooter</h3>
-          <p class="game-desc">Blast enemies in space.</p>
-          <a href="space.html" class="play-btn">Play</a>
-        </div>
-
-      </div>
-    </section>
-
-    <section id="scores" class="scores-panel">
-      <h2>High Scores</h2>
-      <ul class="scores-list">
-        <li>Snake: <span id="hs-snake">0</span></li>
-        <li>Pong: <span id="hs-pong">0</span></li>
-        <li>Reaction: <span id="hs-reaction">0</span></li>
-        <li>Breakout: <span id="hs-breakout">0</span></li>
-        <li>Flappy Flight: <span id="hs-flappy">0</span></li>
-        <li>Traffic Dodger: <span id="hs-traffic">0</span></li>
-        <li>Neon Tetris: <span id="hs-tetris">0</span></li>
-        <li>Neon Dino Run: <span id="hs-dino">0</span></li>
-        <li>Space Shooter: <span id="hs-space">0</span></li>
-      </ul>
-    </section>
-
-    <section id="about" class="footer">
-      Charlie’s Neon Arcade — built by Charlie, upgraded forever.
-    </section>
-
-  </div>
-
-  <script>
-    function getHighScore(key) {
-      return localStorage.getItem("hs_" + key) || 0;
-    }
-
-    document.getElementById("hs-snake").innerText = getHighScore("snake");
-    document.getElementById("hs-pong").innerText = getHighScore("pong");
-    document.getElementById("hs-reaction").innerText = getHighScore("reaction");
-    document.getElementById("hs-breakout").innerText = getHighScore("breakout");
-    document.getElementById("hs-flappy").innerText = getHighScore("flappy");
-    document.getElementById("hs-traffic").innerText = getHighScore("traffic");
-    document.getElementById("hs-tetris").innerText = getHighScore("tetris");
-    document.getElementById("hs-dino").innerText = getHighScore("dino");
-    document.getElementById("hs-space").innerText = getHighScore("space");
-  </script>
-
+<header class="topbar"><nav class="nav"><div class="brand"><div class="brandmark">C</div>Charlie's Arcade</div><div class="navlinks"><a href="#games">Games</a><a href="#recent">Recent</a><a href="https://github.com/charliesturm0106-alt/charlies-arcade-games">GitHub</a></div></nav></header>
+<main class="wrap">
+<section class="hero">
+<div><div class="eyebrow"><span class="dot"></span> ARCADE ONLINE</div><h1>Pick a game.<br><span class="gradient">Start playing.</span></h1><p>Quick browser games, no clutter. Choose one below and jump straight in.</p></div>
+<div class="heroStats"><div class="stat"><strong id="gameCount">10</strong><span>GAMES</span></div><div class="stat"><strong id="playedCount">0</strong><span>PLAYED</span></div></div>
+</section>
+<section id="games">
+<div class="toolbar"><div class="search"><span class="searchIcon">⌕</span><input id="search" type="search" placeholder="Search games..." autocomplete="off"></div><button class="random" id="randomBtn">↻ Random game</button></div>
+<div class="sectionHead"><h2>All games</h2><span id="resultCount">10 games</span></div>
+<div class="grid" id="gameGrid">
+<a class="card" href="snake.html" data-name="Snake classic arcade" data-game="Snake" style="--glow:#55e68b"><span class="tag">Classic</span><div class="icon">🐍</div><h3>Snake</h3><p>Grow longer, grab food, and don't hit the wall.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="pong.html" data-name="Pong paddle cpu arcade" data-game="Pong" style="--glow:#55c8ff"><span class="tag">Arcade</span><div class="icon">🏓</div><h3>Pong</h3><p>Fast paddle battles against the CPU.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="reaction.html" data-name="Reaction Test speed reflex" data-game="Reaction Test" style="--glow:#ffe75b"><span class="tag">Skill</span><div class="icon">⚡</div><h3>Reaction Test</h3><p>Wait for the signal and test your reflexes.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="breakout.html" data-name="Breakout bricks paddle" data-game="Breakout" style="--glow:#ff6c82"><span class="tag">Classic</span><div class="icon">🧱</div><h3>Breakout</h3><p>Bounce the ball and clear every brick.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="flappy.html" data-name="Flappy Flight bird pipes" data-game="Flappy Flight" style="--glow:#5de6d0"><span class="tag">Endless</span><div class="icon">🐦</div><h3>Flappy Flight</h3><p>Thread the gaps and keep your run alive.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="traffic.html" data-name="Traffic Dodger car driving" data-game="Traffic Dodger" style="--glow:#ff9d4d"><span class="tag">Driving</span><div class="icon">🏎️</div><h3>Traffic Dodger</h3><p>Switch lanes, dodge traffic, survive longer.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="tetris.html" data-name="Neon Tetris blocks puzzle" data-game="Neon Tetris" style="--glow:#8c6cff"><span class="tag">Puzzle</span><div class="icon">◆</div><h3>Neon Tetris</h3><p>Stack pieces, clear lines, chase your high score.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="neon-dino.html" data-name="Neon Dino Run dinosaur runner" data-game="Neon Dino Run" style="--glow:#c4ff5d"><span class="tag">Runner</span><div class="icon">🦖</div><h3>Neon Dino Run</h3><p>Jump obstacles and see how far you can go.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="space.html" data-name="Space Shooter rocket aliens" data-game="Space Shooter" style="--glow:#a878ff"><span class="tag">Action</span><div class="icon">🚀</div><h3>Space Shooter</h3><p>Move fast and blast enemies in space.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+<a class="card" href="tap.html" data-name="Tap Challenge clicking speed" data-game="Tap Challenge" style="--glow:#ff6ed4"><span class="tag">Speed</span><div class="icon">👆</div><h3>Tap Challenge</h3><p>Tap fast, build your score, beat your best.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
+</div>
+<div class="empty" id="empty">No games found. Try another search.</div>
+</section>
+<section class="recent" id="recent"><div class="sectionHead"><h2>Recently played</h2><span>Saved on this device</span></div><div class="recentRow" id="recentRow"><span style="color:var(--muted);font-size:13px">Play a game and it will show up here.</span></div></section>
+<footer class="footer"><span>Charlie's Arcade</span><span>Built for quick games.</span></footer>
+</main>
+<script>
+const cards=[...document.querySelectorAll('.card')], search=document.getElementById('search'), result=document.getElementById('resultCount'), empty=document.getElementById('empty');
+function filterGames(){const q=search.value.trim().toLowerCase();let shown=0;cards.forEach(c=>{const yes=c.dataset.name.toLowerCase().includes(q);c.style.display=yes?'flex':'none';if(yes)shown++});result.textContent=shown+(shown===1?' game':' games');empty.style.display=shown?'none':'block'}
+search.addEventListener('input',filterGames);
+document.getElementById('randomBtn').addEventListener('click',()=>{const visible=cards.filter(c=>c.style.display!=='none');if(visible.length)location.href=visible[Math.floor(Math.random()*visible.length)].href});
+function getRecent(){try{return JSON.parse(localStorage.getItem('charlie_recent')||'[]')}catch(e){return[]}}
+function saveRecent(name,href){let r=getRecent().filter(x=>x.href!==href);r.unshift({name,href});localStorage.setItem('charlie_recent',JSON.stringify(r.slice(0,5)))}
+cards.forEach(c=>c.addEventListener('click',()=>saveRecent(c.dataset.game,c.getAttribute('href'))));
+function renderRecent(){const r=getRecent(),box=document.getElementById('recentRow');document.getElementById('playedCount').textContent=r.length;if(!r.length)return;box.innerHTML='';r.forEach(x=>{const a=document.createElement('a');a.className='recentChip';a.href=x.href;a.textContent='▶ '+x.name;box.appendChild(a)})}
+renderRecent();
+</script>
 </body>
 </html>
