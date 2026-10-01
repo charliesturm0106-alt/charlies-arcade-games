@@ -100,7 +100,11 @@ function publicPlayer(player) {
     color: player.color,
     wheels: player.wheels,
     spoiler: player.spoiler,
-    racing: player.racing
+    racing: player.racing,
+    chapter: player.chapter,
+    raceId: player.raceId,
+    wanted: player.wanted,
+    district: player.district
   };
 }
 
@@ -197,6 +201,10 @@ function joinRoom(ws, mode, data) {
     wheels: 0,
     spoiler: 1,
     racing: false,
+    chapter: Math.floor(finite(data.chapter, 1, 1, 5)),
+    raceId: String(data.raceId || '').slice(0, 24),
+    wanted: Math.floor(finite(data.wanted, 0, 0, 5)),
+    district: String(data.district || 'DOWNTOWN').replace(/[^A-Z0-9 _-]/gi, '').slice(0, 24),
     updatedAt: Date.now()
   };
 
@@ -237,6 +245,10 @@ function updateState(ws, data) {
   p.wheels = Math.floor(finite(data.wheels, p.wheels, 0, 2));
   p.spoiler = Math.floor(finite(data.spoiler, p.spoiler, 0, 2));
   p.racing = !!data.racing;
+  p.chapter = Math.floor(finite(data.chapter, p.chapter || 1, 1, 5));
+  p.raceId = String(data.raceId || p.raceId || '').slice(0, 24);
+  p.wanted = Math.floor(finite(data.wanted, p.wanted || 0, 0, 5));
+  p.district = String(data.district || p.district || 'DOWNTOWN').replace(/[^A-Z0-9 _-]/gi, '').slice(0, 24);
   p.updatedAt = Date.now();
 
   broadcast(ws.roomCode, { type: 'state', player: publicPlayer(p) }, ws);
