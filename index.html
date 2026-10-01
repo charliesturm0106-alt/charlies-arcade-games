@@ -15,17 +15,18 @@ button,input,a{font:inherit}.topbar{position:sticky;top:0;z-index:20;background:
 .recent{margin-top:42px}.recentRow{display:flex;gap:10px;flex-wrap:wrap}.recentChip{color:#dfe3f1;text-decoration:none;background:#121725;border:1px solid var(--line);padding:10px 13px;border-radius:12px;font-size:13px;font-weight:750}.footer{border-top:1px solid #ffffff0a;margin-top:55px;padding-top:24px;color:#687187;font-size:12px;display:flex;justify-content:space-between}
 @media(max-width:900px){.hero{grid-template-columns:1fr}.heroStats{max-width:420px}.grid{grid-template-columns:repeat(2,1fr)}.hero h1{letter-spacing:-2.5px}.navlinks{display:none}}
 @media(max-width:560px){.nav{height:64px}.wrap{padding:0 15px 50px}.hero{padding-top:45px}.hero h1{font-size:45px}.hero p{font-size:15px}.grid{grid-template-columns:1fr}.toolbar{flex-direction:column}.random{height:48px}.card{min-height:215px}.icon{margin-bottom:20px}.footer{gap:12px;flex-direction:column}}
+.webSearchLink{display:flex;align-items:center;justify-content:center;min-height:50px;padding:0 18px;border-radius:14px;background:#65dfc2;color:#08201c;text-decoration:none;font-weight:800;white-space:nowrap}.webSearchLink:hover{background:#83eed5}
 </style>
 </head>
 <body>
-<header class="topbar"><nav class="nav"><div class="brand"><div class="brandmark">C</div>Charlie's Arcade</div><div class="navlinks"><a href="#games">Games</a><a href="#recent">Recent</a><a href="https://github.com/charliesturm0106-alt/charlies-arcade-games">GitHub</a></div></nav></header>
+<header class="topbar"><nav class="nav"><div class="brand"><div class="brandmark">C</div>Charlie's Arcade</div><div class="navlinks"><a href="#games">Games</a><a href="#recent">Recent</a><a href="search.html">Web search</a><a href="https://github.com/charliesturm0106-alt/charlies-arcade-games">GitHub</a></div></nav></header>
 <main class="wrap">
 <section class="hero">
 <div><div class="eyebrow"><span class="dot"></span> ARCADE ONLINE</div><h1>Pick a game.<br><span class="gradient">Start playing.</span></h1><p>Quick browser games, no clutter. Choose one below and jump straight in.</p></div>
 <div class="heroStats"><div class="stat"><strong id="gameCount">19</strong><span>GAMES</span></div><div class="stat"><strong id="playedCount">0</strong><span>PLAYED</span></div></div>
 </section>
 <section id="games">
-<div class="toolbar"><div class="search"><span class="searchIcon">⌕</span><input id="search" type="search" placeholder="Search games..." autocomplete="off"></div><button class="random" id="randomBtn">↻ Random game</button></div>
+<div class="toolbar"><div class="search"><span class="searchIcon">⌕</span><input id="search" type="search" placeholder="Search games..." autocomplete="off"></div><a class="webSearchLink" href="search.html">⌕ Search the web</a><button class="random" id="randomBtn">↻ Random game</button></div>
 <div class="sectionHead"><h2>All games</h2><span id="resultCount">19 games</span></div>
 <div class="grid" id="gameGrid">
 <a class="card" href="snake.html" data-name="Snake classic arcade" data-game="Snake" style="--glow:#55e68b"><span class="tag">Classic</span><div class="icon">🐍</div><h3>Snake</h3><p>Grow longer, grab food, and don't hit the wall.</p><div class="play">PLAY NOW <span class="arrow">→</span></div></a>
