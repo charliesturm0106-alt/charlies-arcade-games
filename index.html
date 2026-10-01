@@ -256,13 +256,20 @@
           <p class="game-desc">Dodge cars. Stay alive.</p>
           <a href="traffic.html" class="play-btn">Play</a>
         </div>
-        
-<div class="game-card">
-  <div class="game-thumb">TETRIS</div>
-  <h3>Tetris</h3>
-  <p class="game-desc">Stack the falling blocks.</p>
-  <a href="tetris.html" class="play-btn">Play</a>
-</div>
+
+        <div class="game-card">
+          <div class="game-thumb">TETRIS</div>
+          <h3>Tetris</h3>
+          <p class="game-desc">Stack the falling blocks.</p>
+          <a href="tetris.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">DINO</div>
+          <h3>Neon Dino Run</h3>
+          <p class="game-desc">Jump. Dodge. Glow.</p>
+          <a href="neon-dino.html" class="play-btn">Play</a>
+        </div>
 
         <div class="game-card">
           <div class="game-thumb">SPACE</div>
@@ -284,6 +291,8 @@
         <li>Breakout: <span id="hs-breakout">0</span></li>
         <li>Flappy Flight: <span id="hs-flappy">0</span></li>
         <li>Traffic Dodger: <span id="hs-traffic">0</span></li>
+        <li>Tetris: <span id="hs-tetris">0</span></li>
+        <li>Neon Dino: <span id="hs-dino">0</span></li>
         <li>Space Shooter: <span id="hs-space">0</span></li>
       </ul>
     </section>
@@ -305,6 +314,8 @@
     document.getElementById("hs-breakout").innerText = getHighScore("breakout");
     document.getElementById("hs-flappy").innerText = getHighScore("flappy");
     document.getElementById("hs-traffic").innerText = getHighScore("traffic");
+    document.getElementById("hs-tetris").innerText = getHighScore("tetris");
+    document.getElementById("hs-dino").innerText = getHighScore("dino");
     document.getElementById("hs-space").innerText = getHighScore("space");
   </script>
 
