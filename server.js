@@ -15,7 +15,6 @@ const VERSION = '1.2.2';
 
 const app = express();
 app.disable('x-powered-by');
-require('./web-search').install(app);
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
