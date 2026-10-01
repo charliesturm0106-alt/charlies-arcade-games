@@ -214,8 +214,8 @@ function makeSignTexture(text,bg='#1c6a43',fg='#ffffff'){
  const c=document.createElement('canvas');c.width=256;c.height=72;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);x.strokeStyle='#e9eef2';x.lineWidth=6;x.strokeRect(3,3,c.width-6,c.height-6);x.fillStyle=fg;x.font='900 30px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText(text,c.width/2,c.height/2);
  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;signTextureCache.set(key,tex);return tex
 }
-function addFlatSign(x,y,z,text,rot=0,bg='#1c6a43',w=7,h=1.8){
- const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:makeSignTexture(text,bg),side:THREE.DoubleSide,transparent:false}));m.position.set(x,y,z);m.rotation.y=rot;city.add(m);return m
+function addFlatSign(x,y,z,text,rot=0,bg='#1c6a43',w=7,h=1.8,fg='#ffffff'){
+ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:makeSignTexture(text,bg,fg),side:THREE.DoubleSide,transparent:false}));m.position.set(x,y,z);m.rotation.y=rot;city.add(m);return m
 }
 function makeSignalHead(x,y,z,rot=0){
  const g=new THREE.Group(),housing=new THREE.Mesh(new THREE.BoxGeometry(1.45,3.5,.72),new THREE.MeshStandardMaterial({color:0x11161b,roughness:.72}));g.add(housing);
@@ -244,7 +244,7 @@ function addCityLifeProps(){
  }
  // roadside regulatory signs
  for(const p of [[-210,-88,0,'SPEED 45'],[156,88,Math.PI,'SPEED 45'],[88,210,Math.PI/2,'ONE WAY'],[-88,-210,-Math.PI/2,'ONE WAY']]){
-  const pole=new THREE.Mesh(new THREE.BoxGeometry(.14,3.6,.14),new THREE.MeshStandardMaterial({color:0x777f86,metalness:.4,roughness:.55}));pole.position.set(p[0],1.8,p[1]);city.add(pole);addFlatSign(p[0],3.5,p[1],p[3],p[2],'#f4f6f7',5.6,1.65)
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.14,3.6,.14),new THREE.MeshStandardMaterial({color:0x777f86,metalness:.4,roughness:.55}));pole.position.set(p[0],1.8,p[1]);city.add(pole);addFlatSign(p[0],3.5,p[1],p[3],p[2],'#f4f6f7',5.6,1.65,'#111820')
  }
 }
 addCityLifeProps();
