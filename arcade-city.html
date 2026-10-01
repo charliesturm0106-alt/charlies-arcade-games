@@ -34,7 +34,7 @@
 
 <div class="menuShade" id="menuShade"><div class="menu">
  <h1 class="logo">ARCADE<br><span>CITY 3D</span></h1>
- <p>v0.6 rebuilds racing with proper grids, 3-2-1 starts, wide checkpoint gates, stable AI progress, results, restarts, best times, and a new Outer Loop GP.</p>
+ <p>v0.7.1 makes race AI drive like cars instead of rails: smooth steering, braking zones, acceleration limits, grip, corner speed, and different driver styles.</p>
  <div class="menuBtns">
   <button class="primary" id="driveBtn">DRIVE CITY<small>Continue your career</small></button>
   <button id="garageBtn">GARAGE & DEALER<small>Buy and switch cars</small></button>
@@ -291,6 +291,7 @@ function routeMetrics(route){
  for(let i=1;i<route.length;i++){const len=Math.hypot(route[i][0]-route[i-1][0],route[i][1]-route[i-1][1]);seg.push(len);total+=len;cum.push(total)}
  return {seg,cum,total}
 }
+function angleDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
 function sampleRoute(route,metrics,d){
  const firstA=route[0],firstB=route[1],firstHeading=Math.atan2(firstB[0]-firstA[0],firstB[1]-firstA[1]);
  if(d<0)return {x:firstA[0]+Math.sin(firstHeading)*d,z:firstA[1]+Math.cos(firstHeading)*d,heading:firstHeading,segment:0};
@@ -313,19 +314,80 @@ function setPlayerOnGrid(route,slot=0){
  player.mesh.position.set(player.pos.x,0,player.pos.z);player.mesh.rotation.y=heading
 }
 function spawnRivals(r){
- clearRivals();const colors=[0xff704d,0xffd94a],car=effectiveCar(),base=Math.min(38,Math.max(24,car.top*.44704*.72+(r.repNeed||0)/300));
+ clearRivals();
+ const colors=[0xff704d,0xffd94a],car=effectiveCar();
+ const raceBoost=Math.min(7,(r.repNeed||0)/260),baseTop=clamp(car.top*.44704*.76+raceBoost,25,43);
+ const profiles=[
+  {name:'Mako',pace:.92,accel:8.2,brake:14.2,steerRate:1.42,steerResponse:3.6,skill:.88,look:15,lane:-3.0},
+  {name:'Nova',pace:.96,accel:8.9,brake:15.1,steerRate:1.52,steerResponse:3.9,skill:.92,look:17,lane:3.0}
+ ];
  for(let i=0;i<2;i++){
-  const m=makeCar(colors[i],.84),back=12+i*5,lane=i===0?-3.1:3.1,sample=sampleRoute(activeRace.route,activeRace.metrics,-back);scene.add(m);
-  rivals.push({mesh:m,distance:-back,lane,speed:base*(i===0?.96:1.03),finished:false,finishedAt:0});
-  const sx=Math.cos(sample.heading),sz=-Math.sin(sample.heading);m.position.set(sample.x+sx*lane,0,sample.z+sz*lane);m.rotation.y=sample.heading
+  const p=profiles[i],m=makeCar(colors[i],.84),back=12+i*5,sample=sampleRoute(activeRace.route,activeRace.metrics,-back);scene.add(m);
+  rivals.push({
+   name:p.name,mesh:m,distance:-back,lane:p.lane,speed:0,maxSpeed:baseTop*p.pace,
+   accel:p.accel,brake:p.brake,steerRate:p.steerRate,steerResponse:p.steerResponse,
+   skill:p.skill,lookBase:p.look,steer:0,heading:sample.heading,finished:false,finishedAt:0
+  });
+  const sx=Math.cos(sample.heading),sz=-Math.sin(sample.heading);
+  m.position.set(sample.x+sx*p.lane,0,sample.z+sz*p.lane);m.rotation.y=sample.heading
  }
 }
 function updateRivals(dt){
  if(!activeRace||activeRace.phase!=='racing')return;
  for(const r of rivals){
-  if(r.finished)continue;r.distance+=r.speed*dt;
-  if(r.distance>=activeRace.metrics.total){r.distance=activeRace.metrics.total;r.finished=true;r.finishedAt=performance.now()}
-  const p=sampleRoute(activeRace.route,activeRace.metrics,r.distance),sx=Math.cos(p.heading),sz=-Math.sin(p.heading);r.mesh.position.set(p.x+sx*r.lane,0,p.z+sz*r.lane);r.mesh.rotation.y=p.heading;r.mesh.userData.wheels?.forEach(w=>w.rotation.x-=r.speed*dt*.8)
+  if(r.finished)continue;
+
+  const lookAhead=clamp(r.lookBase+r.speed*.42,12,34);
+  const aim=sampleRoute(activeRace.route,activeRace.metrics,r.distance+lookAhead);
+  const future=sampleRoute(activeRace.route,activeRace.metrics,r.distance+lookAhead+20);
+  const sideX=Math.cos(aim.heading),sideZ=-Math.sin(aim.heading);
+  const targetX=aim.x+sideX*r.lane,targetZ=aim.z+sideZ*r.lane;
+  const desiredHeading=Math.atan2(targetX-r.mesh.position.x,targetZ-r.mesh.position.z);
+  const headingError=angleDiff(desiredHeading,r.heading);
+  const steerTarget=clamp(headingError/(Math.PI*.30),-1,1);
+  r.steer=lerp(r.steer,steerTarget,clamp(dt*r.steerResponse,0,1));
+
+  // Read the corner ahead and brake before it instead of rotating at the waypoint.
+  const curve=Math.abs(angleDiff(future.heading,aim.heading));
+  const severity=clamp(curve/(Math.PI/2),0,1);
+  const rainGrip=weatherState==='RAIN'?.88:weatherState==='OVERCAST'?.96:1;
+  let targetSpeed=r.maxSpeed*(1-severity*(.48+(1-r.skill)*.18))*rainGrip;
+  if(Math.abs(headingError)>.7)targetSpeed*=.76;
+  else if(Math.abs(headingError)>.4)targetSpeed*=.88;
+  targetSpeed=Math.max(10,targetSpeed);
+
+  if(r.speed<targetSpeed)r.speed=Math.min(targetSpeed,r.speed+r.accel*dt);
+  else r.speed=Math.max(targetSpeed,r.speed-r.brake*dt);
+
+  // Steering authority fades a little at high speed, so 90-degree turns need braking.
+  const speedRatio=clamp(r.speed/Math.max(1,r.maxSpeed),0,1);
+  const turnRate=r.steerRate*(1-speedRatio*.28);
+  r.heading+=r.steer*turnRate*dt;
+
+  const move=r.speed*dt;
+  r.mesh.position.x+=Math.sin(r.heading)*move;
+  r.mesh.position.z+=Math.cos(r.heading)*move;
+  r.mesh.rotation.y=r.heading;
+  r.mesh.userData.wheels?.forEach(w=>w.rotation.x-=r.speed*dt*.8);
+
+  // Progress follows actual forward motion; bad steering costs distance instead of giving free progress.
+  const pathHere=sampleRoute(activeRace.route,activeRace.metrics,Math.max(0,r.distance));
+  const alignment=Math.max(.28,Math.cos(angleDiff(r.heading,pathHere.heading)));
+  r.distance+=move*alignment;
+
+  // Gentle road-line recovery, not teleporting: it just nudges the steering target on the next frame.
+  const center=sampleRoute(activeRace.route,activeRace.metrics,r.distance);
+  const laneX=center.x+Math.cos(center.heading)*r.lane,laneZ=center.z-Math.sin(center.heading)*r.lane;
+  const offLine=Math.hypot(r.mesh.position.x-laneX,r.mesh.position.z-laneZ);
+  if(offLine>14){r.speed=Math.max(8,r.speed-r.brake*.35*dt);r.lookBase=Math.max(11,r.lookBase-dt*2)}
+  else r.lookBase=Math.min(r.name==='Mako'?15:17,r.lookBase+dt*.7);
+
+  const finish=activeRace.route[activeRace.route.length-1];
+  if(r.distance>=activeRace.metrics.total&&Math.hypot(r.mesh.position.x-finish[0],r.mesh.position.z-finish[1])<18){
+   r.distance=activeRace.metrics.total;r.finished=true;r.finishedAt=performance.now();r.speed=0
+  }else if(r.distance>activeRace.metrics.total-1){
+   r.distance=activeRace.metrics.total-1
+  }
  }
 }
 function playerRaceProgress(){
@@ -461,7 +523,7 @@ function districtName(){
  return 'MIDTOWN';
 }
 function renderHUD(){$('speed').textContent=Math.floor(Math.abs(player.speed)*2.23694);$('money').textContent=String.fromCharCode(36)+Math.floor(state.money).toLocaleString();$('rep').textContent=state.rep.toLocaleString();const zn=districtName();$('zone').textContent=zn;if(zn!==lastZone){lastZone=zn}const wl=wantedLevel();$('wanted').textContent='WANTED '+('★'.repeat(wl)+'☆'.repeat(3-wl));$('wanted').classList.toggle('hot',wl>0);$('missionBar').style.width=activeRace?Math.min(100,playerRaceProgress()/activeRace.metrics.total*100)+'%':activeJob?Math.max(0,100-((performance.now()-activeJob.start)/1000)/activeJob.timeLimit*100)+'%':Math.min(100,state.rep/1800*100)+'%'}
-function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1);$('missionType').textContent=activeRace.phase==='countdown'?'RACE · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1);$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'Drive through the glowing gates in order · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE';$('missionTitle').textContent='Lose the police';$('missionText').textContent='Create distance until your wanted level cools down.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City v0.6';$('missionText').textContent='Race overhaul · proper starts · checkpoint gates · best times · results · Outer Loop GP'}}
+function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1);$('missionType').textContent=activeRace.phase==='countdown'?'RACE · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1);$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'AI now brakes and steers through corners · drive the glowing gates · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE';$('missionTitle').textContent='Lose the police';$('missionText').textContent='Create distance until your wanted level cools down.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City v0.7.1';$('missionText').textContent='Fluid AI racing · real braking zones · smooth steering · grip limits · fair corner speed'}}
 function drawMini(){const ctx=$('minimap').getContext('2d'),w=300,h=300,sc=w/(WORLD*2+30);ctx.clearRect(0,0,w,h);ctx.fillStyle='#09111a';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#3d4854';ctx.lineWidth=ROAD*sc;roadCenters.forEach(v=>{ctx.beginPath();ctx.moveTo(w/2+v*sc,0);ctx.lineTo(w/2+v*sc,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,h/2+v*sc);ctx.lineTo(w,h/2+v*sc);ctx.stroke()});ctx.fillStyle='#303943';for(const r of roadZones){ctx.fillRect(w/2+(r.x-r.hw)*sc,h/2+(r.z-r.hd)*sc,r.hw*2*sc,r.hd*2*sc)}for(const m of markers){ctx.fillStyle=m.type==='race'?'#56dfff':m.type==='garage'?'#55e494':m.type==='dealer'?'#9e7cff':m.type==='drift'?'#ffd15c':m.type==='delivery'?'#ff9f4d':m.type==='stunt'?'#ff4fc4':'#ff6878';ctx.beginPath();ctx.arc(w/2+m.x*sc,h/2+m.z*sc,4,0,Math.PI*2);ctx.fill()}for(const p of police){ctx.fillStyle='#ff6677';ctx.beginPath();ctx.arc(w/2+p.mesh.position.x*sc,h/2+p.mesh.position.z*sc,3.5,0,Math.PI*2);ctx.fill()}for(const r of rivals){if(r.finished)continue;ctx.fillStyle='#ffbf4d';ctx.beginPath();ctx.arc(w/2+r.mesh.position.x*sc,h/2+r.mesh.position.z*sc,3.5,0,Math.PI*2);ctx.fill()}ctx.save();ctx.translate(w/2+player.pos.x*sc,h/2+player.pos.z*sc);ctx.rotate(-player.heading);ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(5,6);ctx.lineTo(-5,6);ctx.closePath();ctx.fill();ctx.restore()}
 function updateDayNight(dt){worldClock=(worldClock+dt/210)%1;const sunWave=Math.sin(worldClock*Math.PI*2-Math.PI/2),day=clamp((sunWave+.28)/.75,0,1),night=1-day,weatherDim=weatherState==='RAIN'?.68:weatherState==='OVERCAST'?.82:1;skyColor.copy(nightColor).lerp(dayColor,day);scene.background.copy(skyColor);scene.fog.color.copy(skyColor);sun.intensity=(.12+day*2.05)*weatherDim;hemi.intensity=(.35+day*1.2)*weatherDim;renderer.toneMappingExposure=(.72+day*.38)*(weatherState==='RAIN'?.88:weatherState==='OVERCAST'?.94:1);scene.fog.far=weatherState==='RAIN'?600:weatherState==='OVERCAST'?760:900;sun.position.set(Math.cos(worldClock*Math.PI*2)*170,Math.max(14,Math.sin(worldClock*Math.PI*2)*170),85);streetLights.forEach(l=>l.material.emissiveIntensity=.35+night*5.4);streetLightSources.forEach(l=>l.intensity=night*28);buildingGlassMat.emissiveIntensity=.10+night*.95;neonMaterials.forEach((m,i)=>m.emissiveIntensity=.35+night*(2.2+(i%3)*.35));player.mesh.traverse(o=>{if(o.isSpotLight&&o.userData.headlight)o.intensity=night*(PERF_MOBILE?55:82)});const totalMin=Math.floor(worldClock*24*60),hh=Math.floor(totalMin/60)%24,mm=totalMin%60;$('clock').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')}
 let visualAccum=0;function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;visualAccum+=dt;resize();if(running){updateRaceState();updatePlayer(dt);updateJump(dt);updateSmoke(dt);updateTraffic(dt);updateRivals(dt);updatePolice(dt);updateEvents(dt);updateCamera(dt);updateMission();renderHUD();drawMini()}else updateSmoke(dt);updateWeather(dt);updateDayNight(dt);if(visualAccum>.033){markers.forEach(m=>m.mesh.rotation.y+=visualAccum*.65);visualAccum=0}renderer.render(scene,camera)}requestAnimationFrame(loop);
