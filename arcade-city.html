@@ -36,9 +36,9 @@
 </div>
 
 <div class="menuShade" id="menuShade"><div class="menu">
- <div class="releaseTag">VERSION 1.3.2 · PURSUIT TUNED</div>
+ <div class="releaseTag">VERSION 1.4 · PURSUIT AI</div>
  <h1 class="logo">ARCADE<br><span>CITY 3D</span></h1>
- <p>Arcade City 1.3.2: tougher police pursuits with interceptors, ram units, escalating backup, smarter roadblocks, and a longer search phase — plus private multiplayer.</p>
+ <p>Arcade City 1.4: rebuilt pursuit AI with delayed reactions, different cop personalities, imperfect prediction, jukable lines, interceptors, roadblocks, and private multiplayer.</p>
  <div class="menuBtns">
   <button class="primary" id="driveBtn">DRIVE CITY<small>Continue your career</small></button>
   <button id="garageBtn">GARAGE & DEALER<small>Buy and switch cars</small></button>
@@ -688,8 +688,21 @@ function policeSpawnPoint(index,role){
  return nearestRoadPoint(tx,tz)
 }
 function configurePoliceUnit(p,index){
- const lvl=Math.max(1,wantedLevel()),role=policeRoleFor(index);
- p.role=role;p.accel=12+lvl*1.2+(role==='rammer'?1.2:0);p.turnRate=1.60+lvl*.09+(role==='interceptor'?.08:0);p.heading=Number.isFinite(p.heading)?p.heading:player.heading;p.speed=Math.max(15,p.speed||0);p.stuck=0;p.hitCooldown=0;p.repositionCooldown=0;p.lastX=p.mesh.position.x;p.lastZ=p.mesh.position.z;p.mesh.userData.pursuitRole=role;return p
+ const lvl=Math.max(1,wantedLevel()),role=policeRoleFor(index),r=Math.random;
+ p.role=role;
+ p.speedBias=.93+r()*.14;
+ p.turnBias=.90+r()*.20;
+ p.reaction=role==='interceptor'?.24+r()*.16:role==='rammer'?.28+r()*.18:.34+r()*.26;
+ p.leadSkill=role==='interceptor'?.16+r()*.16:role==='rammer'?0:.02+r()*.08;
+ p.aimError=role==='interceptor'?5+r()*6:role==='rammer'?4+r()*7:7+r()*10;
+ p.aggression=.86+r()*.24;
+ p.mistakeChance=role==='interceptor'?.07+r()*.05:.10+r()*.09;
+ p.decisionTimer=r()*p.reaction;
+ p.targetX=player.pos.x;p.targetZ=player.pos.z;
+ p.accel=(12+lvl*1.2+(role==='rammer'?1.2:0))*p.aggression;
+ p.turnRate=(1.60+lvl*.09+(role==='interceptor'?.08:0))*p.turnBias;
+ p.heading=Number.isFinite(p.heading)?p.heading:player.heading;p.speed=Math.max(15,p.speed||0);
+ p.stuck=0;p.hitCooldown=0;p.repositionCooldown=0;p.lastX=p.mesh.position.x;p.lastZ=p.mesh.position.z;p.mesh.userData.pursuitRole=role;return p
 }
 function raiseWanted(amount){
  const before=wantedLevel();wantedHeat=clamp(wantedHeat+amount,0,400);const after=wantedLevel();peakWanted=Math.max(peakWanted,after);
@@ -738,12 +751,23 @@ function updatePolice(dt){
  for(let i=0;i<police.length;i++){
   const p=police[i];p.hitCooldown=Math.max(0,(p.hitCooldown||0)-dt);p.repositionCooldown=Math.max(0,(p.repositionCooldown||0)-dt);
   const dx=player.pos.x-p.mesh.position.x,dz=player.pos.z-p.mesh.position.z,d=Math.hypot(dx,dz);nearest=Math.min(nearest,d);
-  const lead=p.role==='interceptor'?.82+lvl*.04:p.role==='rammer'?.25:.40+lvl*.03;
-  let tx=player.pos.x+fx*playerSpeed*lead,tz=player.pos.z+fz*playerSpeed*lead;
-  if(p.role==='interceptor'){const side=(i%2?1:-1)*(7+lvl*2);tx+=sx*side;tz+=sz*side}
-  if(p.role==='rammer'&&d<18){tx=player.pos.x;tz=player.pos.z}
-  const desired=Math.atan2(tx-p.mesh.position.x,tz-p.mesh.position.z),error=angleDiff(desired,p.heading);
-  let targetSpeed=Math.max(21+lvl*3.2,playerSpeed*(1.015+lvl*.015)+(p.role==='interceptor'?3:p.role==='rammer'?2:1));
+  p.decisionTimer-=dt;
+  if(p.decisionTimer<=0){
+    const leadSeconds=p.role==='interceptor'?p.leadSkill*(.75+lvl*.05):p.role==='pursuit'?p.leadSkill:0;
+    let tx=player.pos.x+fx*playerSpeed*leadSeconds,tz=player.pos.z+fz*playerSpeed*leadSeconds;
+    if(p.role==='interceptor'){const side=(i%2?1:-1)*(4+lvl*1.2);tx+=sx*side;tz+=sz*side}
+    const err=p.aimError*(.7+Math.random()*.6);
+    tx+=(Math.random()-.5)*err;tz+=(Math.random()-.5)*err;
+    if(Math.random()<p.mistakeChance){
+      const over=10+Math.random()*20;
+      tx+=sx*(Math.random()<.5?-over:over);
+      tz+=sz*(Math.random()<.5?-over:over);
+    }
+    p.targetX=clamp(tx,-WORLD+10,WORLD-10);p.targetZ=clamp(tz,-WORLD+10,WORLD-10);
+    p.decisionTimer=p.reaction*(.82+Math.random()*.5);
+  }
+  const desired=Math.atan2(p.targetX-p.mesh.position.x,p.targetZ-p.mesh.position.z),error=angleDiff(desired,p.heading);
+  let targetSpeed=Math.max(21+lvl*3.2,playerSpeed*(1.015+lvl*.015)+(p.role==='interceptor'?3:p.role==='rammer'?2:1))*p.speedBias;
   if(d>115)targetSpeed*=1.05;if(d<11)targetSpeed=Math.max(15,playerSpeed*.84+2);targetSpeed=clamp(targetSpeed,16,72);
   if(Math.abs(error)>.95)targetSpeed*=.78;else if(Math.abs(error)>.55)targetSpeed*=.9;
   p.speed=lerp(p.speed,targetSpeed,clamp(dt*(p.speed>targetSpeed?3.0:1.9+p.accel*.025),0,1));
@@ -752,7 +776,7 @@ function updatePolice(dt){
   if(!collisionAt(nx,nz)){p.mesh.position.x=nx;p.mesh.position.z=nz;p.stuck=Math.max(0,(p.stuck||0)-dt*2)}
   else{p.stuck=(p.stuck||0)+dt;p.heading+=(i%2?1:-1)*(1.05+lvl*.08);p.speed*=.72}
   const moved=Math.hypot(p.mesh.position.x-oldX,p.mesh.position.z-oldZ);if(moved<.06&&p.speed>12)p.stuck=(p.stuck||0)+dt*.7;
-  if((p.stuck||0)>1.6&&d>42&&p.repositionCooldown<=0){const rp=policeSpawnPoint(i,p.role);p.mesh.position.set(rp.x,0,rp.z);p.heading=player.heading;p.speed=Math.max(20,playerSpeed*.72);p.stuck=0;p.repositionCooldown=5}
+  if((p.stuck||0)>1.6&&d>42&&p.repositionCooldown<=0){const rp=policeSpawnPoint(i,p.role);p.mesh.position.set(rp.x,0,rp.z);p.heading=player.heading+(Math.random()-.5)*.35;p.speed=Math.max(20,playerSpeed*.68);p.stuck=0;p.repositionCooldown=5;p.decisionTimer=p.reaction*.8;p.targetX=player.pos.x;p.targetZ=player.pos.z}
   p.mesh.rotation.y=p.heading;p.mesh.userData.wheels?.forEach(w=>w.rotation.x-=p.speed*dt*.8);
   if(d<5&&p.hitCooldown<=0){p.hitCooldown=.58;player.speed*=Math.max(.68,.86-lvl*.02);if(lvl>=5)player.heading+=angleDiff(p.heading,player.heading)*.035*lvl;addDamage(1+lvl*.8);wantedHeat=clamp(wantedHeat+.5+lvl*.3,0,400);sfx('hit')}
  }
@@ -804,7 +828,7 @@ function districtName(){
  return 'MIDTOWN';
 }
 function renderHUD(){$('speed').textContent=Math.floor(Math.abs(player.speed)*2.23694);$('money').textContent=String.fromCharCode(36)+Math.floor(state.money).toLocaleString();$('rep').textContent=state.rep.toLocaleString();const zn=districtName();$('zone').textContent=zn;if(zn!==lastZone){lastZone=zn}const wl=wantedLevel();$('wanted').textContent='WANTED '+('★'.repeat(wl)+'☆'.repeat(5-wl));$('wanted').classList.toggle('hot',wl>0);$('missionBar').style.width=activeRace?Math.min(100,playerRaceProgress()/activeRace.metrics.total*100)+'%':activeJob?Math.max(0,100-((performance.now()-activeJob.start)/1000)/activeJob.timeLimit*100)+'%':Math.min(100,state.rep/1800*100)+'%'}
-function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1),target=activeRace.route[cp],cpDist=target?Math.round(Math.hypot(player.pos.x-target[0],player.pos.z-target[1])):0,elapsed=activeRace.phase==='racing'?((performance.now()-activeRace.start)/1000):0,lastSplit=activeRace.lastSplitTime?(' · SPLIT '+activeRace.lastSplitTime.toFixed(1)+'s'):'';$('missionType').textContent=activeRace.phase==='countdown'?'RACE · '+(activeRace.difficulty?.label||'NORMAL')+' · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1)+' · '+elapsed.toFixed(1)+'s';$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'NEXT '+cpDist+'m'+lastSplit+' · '+(activeRace.difficulty?.label||'NORMAL')+' · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE · '+wantedLevel()+'★';$('missionTitle').textContent=escapeTimer>0?'Police searching':'Pursuit locked on';$('missionText').textContent=escapeTimer>0?'Stay clear for '+Math.ceil(Math.max(0,policeEscapeNeed-escapeTimer))+'s · '+police.length+' units active':'Break line of sight · '+police.length+' units active · roadblocks begin at 3★'}else if(activeFreeEvent){$('missionType').textContent='STREET EVENT';$('missionTitle').textContent=activeFreeEvent.type==='stash'?'Find the cash stash':activeFreeEvent.type==='speed'?'Speed Challenge':'Drift Challenge';$('missionText').textContent=activeFreeEvent.type==='stash'?'Follow GPS to the green stash.':activeFreeEvent.type==='speed'?'Hit '+activeFreeEvent.target+' MPH before time expires.':'Build a '+activeFreeEvent.target+' drift score.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City 1.3';$('missionText').textContent='PURSUIT UPDATE · smarter police · interceptors · roadblocks · racing · multiplayer · career'}}
+function updateMission(){if(activeRace){const cp=Math.min(activeRace.index,activeRace.route.length-1),target=activeRace.route[cp],cpDist=target?Math.round(Math.hypot(player.pos.x-target[0],player.pos.z-target[1])):0,elapsed=activeRace.phase==='racing'?((performance.now()-activeRace.start)/1000):0,lastSplit=activeRace.lastSplitTime?(' · SPLIT '+activeRace.lastSplitTime.toFixed(1)+'s'):'';$('missionType').textContent=activeRace.phase==='countdown'?'RACE · '+(activeRace.difficulty?.label||'NORMAL')+' · STARTING':'RACE · P'+currentRacePlace()+'/3 · CP '+cp+'/'+(activeRace.route.length-1)+' · '+elapsed.toFixed(1)+'s';$('missionTitle').textContent=activeRace.name;$('missionText').textContent=activeRace.phase==='countdown'?'Hold steady for the countdown.':'NEXT '+cpDist+'m'+lastSplit+' · '+(activeRace.difficulty?.label||'NORMAL')+' · R = reset'}else if(activeJob){$('missionType').textContent='COURIER · '+Math.max(0,Math.ceil(activeJob.timeLimit-(performance.now()-activeJob.start)/1000))+'s';$('missionTitle').textContent=activeJob.name;$('missionText').textContent='Reach the orange delivery ring before time runs out.'}else if(chaseActive){$('missionType').textContent='POLICE CHASE · '+wantedLevel()+'★';$('missionTitle').textContent=escapeTimer>0?'Police searching':'Pursuit locked on';$('missionText').textContent=escapeTimer>0?'Stay clear for '+Math.ceil(Math.max(0,policeEscapeNeed-escapeTimer))+'s · '+police.length+' units active':'Break line of sight · '+police.length+' units active · roadblocks begin at 3★'}else if(activeFreeEvent){$('missionType').textContent='STREET EVENT';$('missionTitle').textContent=activeFreeEvent.type==='stash'?'Find the cash stash':activeFreeEvent.type==='speed'?'Speed Challenge':'Drift Challenge';$('missionText').textContent=activeFreeEvent.type==='stash'?'Follow GPS to the green stash.':activeFreeEvent.type==='speed'?'Hit '+activeFreeEvent.target+' MPH before time expires.':'Build a '+activeFreeEvent.target+' drift score.'}else{$('missionType').textContent='FREE ROAM';$('missionTitle').textContent='Arcade City 1.3';$('missionText').textContent='PURSUIT 1.4 · jukable police AI · varied drivers · interceptors · roadblocks · racing · multiplayer'}}
 function updateGPSLabel(){
  if(activeRace){const idx=Math.min(activeRace.index,activeRace.route.length-1),p=activeRace.route[idx],dist=Math.round(Math.hypot(p[0]-player.pos.x,p[1]-player.pos.z)),bearing=Math.atan2(p[0]-player.pos.x,p[1]-player.pos.z),rel=angleDiff(bearing,player.heading),dirs=['↑','↗','→','↘','↓','↙','←','↖'],arrow=dirs[(Math.round(rel/(Math.PI/4))+8)%8];$('gpsLabel').textContent='RACE '+arrow+' CP '+idx+'/'+(activeRace.route.length-1)+' · '+dist+'m';return}
  if(!gpsTarget){$('gpsLabel').textContent='GPS: NONE';return}const gx=gpsTarget.x??player.pos.x,gz=gpsTarget.z??player.pos.z,dist=Math.round(Math.hypot(gx-player.pos.x,gz-player.pos.z)),bearing=Math.atan2(gx-player.pos.x,gz-player.pos.z),rel=angleDiff(bearing,player.heading),dirs=['↑','↗','→','↘','↓','↙','←','↖'],arrow=dirs[(Math.round(rel/(Math.PI/4))+8)%8];$('gpsLabel').textContent='GPS '+arrow+' '+(gpsTarget.label||'DESTINATION')+' · '+dist+'m';if(dist<12&&gpsTarget.type!=='event'){popup('📍 Destination reached');gpsTarget=null;$('gpsLabel').textContent='GPS: NONE'}
