@@ -1,11 +1,11 @@
 'use strict';
 const kind=document.body.dataset.game,canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
-const $=id=>document.getElementById(id),W=400,H=540,keys={};let mode='ready',score=0,state={},last=0,elapsed=0;
+const $=id=>document.getElementById(id),W=400,H=540,keys={};let mode='ready',score=0,state={},last=0,elapsed=0,best=+(localStorage.getItem('hs_'+kind)||0);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h)}
 function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
 function clearKeys(){for(const k of Object.keys(keys))keys[k]=false}
-function hud(){ $('score').textContent=kind==='breakout'?`Score: ${score} · Lives: ${state.lives}`:`Score: ${score}` }
+function hud(){ $('score').textContent=kind==='breakout'?('Score: '+score+' · Best: '+best+' · Lives: '+state.lives):('Score: '+score+' · Best: '+best) }
 function reset(){score=0;elapsed=0;clearKeys();
  if(kind==='breakout')state={x:155,bx:200,by:440,vx:145,vy:-245,lives:3,bricks:Array.from({length:30},(_,i)=>({x:15+(i%6)*63,y:55+Math.floor(i/6)*27,w:55,h:18,alive:true}))};
  if(kind==='flappy')state={y:250,vy:0,pipes:[],spawn:.7};
@@ -14,7 +14,7 @@ function reset(){score=0;elapsed=0;clearKeys();
  hud();draw();
 }
 function start(){reset();mode='playing';$('overlay').hidden=true;$('pause').disabled=false;$('pause').textContent='Pause';last=performance.now()}
-function finish(won=false){mode='over';clearKeys();$('overlay').hidden=false;$('message').textContent=won?'You cleared every brick!':'Game over';$('detail').textContent=`Final score: ${score}`;$('start').textContent='Play again';$('pause').disabled=true}
+function finish(won=false){mode='over';clearKeys();if(score>best){best=score;localStorage.setItem('hs_'+kind,best)}$('overlay').hidden=false;$('message').textContent=won?'You cleared every brick!':'Game over';$('detail').textContent='Score: '+score+' · Best: '+best;$('start').textContent='Play again';$('pause').disabled=true;hud()}
 function pause(){if(!['playing','paused'].includes(mode))return;mode=mode==='playing'?'paused':'playing';clearKeys();$('pause').textContent=mode==='paused'?'Resume':'Pause';$('overlay').hidden=mode!=='paused';if(mode==='paused'){$('message').textContent='Paused';$('detail').textContent='Ready when you are.';$('start').textContent='Resume'}last=performance.now()}
 function flap(){if(mode==='playing'&&kind==='flappy')state.vy=-290}
 function lane(dir){if(mode==='playing'&&kind==='traffic')state.lane=clamp(state.lane+dir,0,2)}
