@@ -1,63 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Rush</title>
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;font-family:Arial;color:white;text-align:center;
-  background:linear-gradient(135deg,#008fb0,#1476e4 60%,#324bd6)
-}
-.top{padding:20px}
-a{color:white;text-decoration:none}
-#game{
-  position:relative;width:min(92%,720px);height:500px;margin:auto;overflow:hidden;
-  background:rgba(0,0,0,.2);border:2px solid rgba(255,255,255,.2);
-  border-radius:25px;box-shadow:0 20px 50px rgba(0,0,0,.25)
-}
-#target{
-  position:absolute;width:70px;height:70px;border:0;border-radius:50%;
-  background:#f8ff46;box-shadow:0 0 24px rgba(248,255,70,.55)
-}
-</style>
-</head>
-<body>
-<div class="top">
-  <a href="index.html">← Back to Arcade</a>
-  <h1>🎯 Tap Rush</h1>
-  <h2 id="score">Score: 0</h2>
-</div>
-
-<div id="game">
-  <button id="target" type="button" aria-label="Target"></button>
-</div>
-
-<script>
-let score=0;
-
-const game=document.getElementById("game");
-const target=document.getElementById("target");
-const scoreText=document.getElementById("score");
-
-function moveTarget(){
-  const maxX=Math.max(0,game.clientWidth-target.offsetWidth);
-  const maxY=Math.max(0,game.clientHeight-target.offsetHeight);
-
-  target.style.left=(Math.random()*maxX)+"px";
-  target.style.top=(Math.random()*maxY)+"px";
-}
-
-target.addEventListener("click",()=>{
-  score++;
-  scoreText.textContent="Score: "+score;
-  moveTarget();
-});
-
-window.addEventListener("resize",moveTarget);
-
-moveTarget();
-</script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#130b17"><title>Tap Rush 2 · Charlie's Arcade</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#4b2056,#0b0810 62%);color:#fff;font-family:Inter,system-ui,sans-serif;display:flex;justify-content:center;padding:16px 12px}main{width:min(100%,760px)}a{color:#cdb5d6;text-decoration:none;font-size:12px;font-weight:900}.head h1{font-size:31px;letter-spacing:-1px;margin:8px 0 2px}.sub{margin:0;color:#a28aab;font-size:11px}.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:13px 0}.box{background:#19111d;border:1px solid #44304d;border-radius:13px;padding:9px}.box span{display:block;color:#947c9c;font-size:8px;font-weight:950}.box strong{font-size:17px}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}.toolbar button,.actions button{border:1px solid #4a3554;background:#201528;color:#f6e8fa;border-radius:11px;padding:9px 11px;font-size:10px;font-weight:950}.toolbar button.active{background:linear-gradient(90deg,#ff5fc8,#8d73ff);color:#100817}.stage{position:relative;height:min(62vh,500px);min-height:380px;border:1px solid #513b5c;border-radius:24px;background:radial-gradient(circle at center,#22152a,#100b15);overflow:hidden;box-shadow:0 24px 70px #0008;touch-action:manipulation}.target{position:absolute;width:74px;height:74px;border:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ffe064 24%,#ff5fc8 58%,#7226c6);box-shadow:0 0 30px #ff5fc888;transform:translate(-50%,-50%);touch-action:manipulation}.target:active{transform:translate(-50%,-50%) scale(.9)}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#0c0711d9;backdrop-filter:blur(6px);padding:22px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,370px);background:#1a1120ed;border:1px solid #513b5c;border-radius:18px;padding:20px}.panel h2{margin:0 0 7px;font-size:27px}.panel p{margin:0 0 15px;color:#ab94b4;font-size:11px;line-height:1.5}.primary{width:100%;border:0;border-radius:12px;padding:12px;background:linear-gradient(90deg,#ff5fc8,#8d73ff);color:#fff;font-weight:1000}.actions{display:flex;gap:8px;margin-top:9px}.actions button{flex:1}.help{text-align:center;color:#827087;font-size:10px}@media(max-width:540px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}}
+</style></head><body><main><a href="index.html">← Arcade 2.0</a><div class="head"><h1>🎯 Tap Rush 2</h1><p class="sub">Timed rounds, shrinking targets, combos, accuracy, and two game modes.</p></div><div class="hud"><div class="box"><span>SCORE</span><strong id="score">0</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div><div class="box"><span>COMBO</span><strong id="combo">x0</strong></div><div class="box"><span>ACCURACY</span><strong id="acc">100%</strong></div><div class="box"><span>TIME</span><strong id="time">30.0</strong></div></div><div class="toolbar" id="modes"><button data-mode="rush" class="active">30s Rush</button><button data-mode="precision">Precision 25</button><button id="soundBtn">Sound: On</button></div><div class="stage" id="stage"><button class="target" id="target" aria-label="Tap target"></button><div class="overlay" id="overlay"><div class="panel"><h2 id="title">Tap Rush 2</h2><p id="message">Hit targets quickly. Every hit grows your combo and shrinks the next target. Missing the board resets your combo.</p><button class="primary" id="start">START ROUND</button></div></div></div><div class="actions"><button id="pause">Pause</button><button id="restart">Restart</button></div><p class="help">Touch or mouse. Precision mode ends after 25 successful hits instead of a timer.</p></main><script>
+const $=id=>document.getElementById(id),stage=$('stage'),target=$('target');let state='ready',mode='rush',score=0,best=+(localStorage.getItem('hs_tap')||0),combo=0,hits=0,misses=0,time=30,last=0,sound=true,audio=null;
+$('best').textContent=best;
+function beep(f=650){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.value=.025;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.04);o.stop(audio.currentTime+.05)}catch(e){}}
+function hud(){const total=hits+misses;$('score').textContent=score;$('best').textContent=best;$('combo').textContent='x'+combo;$('acc').textContent=(total?Math.round(hits/total*100):100)+'%';$('time').textContent=mode==='rush'?time.toFixed(1):(hits+'/25')}
+function move(){const r=stage.getBoundingClientRect(),size=Math.max(38,74-Math.min(30,combo*2)),pad=size/2+8;target.style.width=size+'px';target.style.height=size+'px';target.style.left=(pad+Math.random()*Math.max(1,r.width-pad*2))+'px';target.style.top=(pad+Math.random()*Math.max(1,r.height-pad*2))+'px'}
+function start(){score=0;combo=0;hits=0;misses=0;time=30;state='play';$('overlay').hidden=true;move();hud();last=performance.now()}
+function finish(){state='over';if(score>best){best=score;localStorage.setItem('hs_tap',best)}hud();$('title').textContent='Round complete';$('message').textContent='Score '+score+' · best '+best+' · accuracy '+$('acc').textContent+'.';$('start').textContent='PLAY AGAIN';$('overlay').hidden=false}
+function pause(){if(state==='play'){state='pause';$('title').textContent='Paused';$('message').textContent='Round paused.';$('start').textContent='RESUME';$('overlay').hidden=false}else if(state==='pause'){state='play';$('overlay').hidden=true;last=performance.now()}}
+target.onclick=e=>{e.stopPropagation();if(state!=='play')return;hits++;combo++;score+=10+Math.min(50,combo*2);beep(650+Math.min(300,combo*12));if(mode==='precision'&&hits>=25){finish();return}move();hud()};stage.addEventListener('pointerdown',e=>{if(state!=='play'||e.target===target)return;misses++;combo=0;score=Math.max(0,score-5);beep(160);hud()});
+function frame(n){const dt=Math.min(.05,(n-last)/1000);last=n;if(state==='play'&&mode==='rush'){time-=dt;if(time<=0){time=0;finish()}hud()}requestAnimationFrame(frame)}$('modes').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b||state==='play')return;mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(q=>q.classList.toggle('active',q===b));hud()};$('soundBtn').onclick=()=>{sound=!sound;$('soundBtn').textContent='Sound: '+(sound?'On':'Off')};$('start').onclick=()=>state==='pause'?pause():start();$('pause').onclick=pause;$('restart').onclick=start;window.addEventListener('resize',()=>{if(state==='play')move()});window.addEventListener('blur',()=>{if(state==='play')pause()});hud();requestAnimationFrame(frame);
+</script></body></html>
