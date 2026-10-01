@@ -1,22 +1,82 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Hockey Shootout · Charlie's Arcade</title><style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#16355c,#07111f 58%);color:#f7fbff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}main{width:min(100%,720px)}a{color:#b9cce8;text-decoration:none;font-weight:800;font-size:14px}.head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin:12px 0 14px}.head h1{font-size:31px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8fa4bf;font-size:13px}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:10px}.box{background:#0d1a2a;border:1px solid #203652;border-radius:14px;padding:10px 12px}.box span{display:block;color:#7890ae;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:19px}.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#102037;color:#e8f2ff;border:1px solid #27415f;border-radius:12px;font-weight:850}.stage{position:relative;overflow:hidden;border:1px solid #294566;border-radius:22px;background:#d9f6ff;box-shadow:0 24px 70px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#07111fd1;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,390px);padding:24px;background:#0c1a2be8;border:1px solid #294a70;border-radius:20px}.panel h2{font-size:28px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.55;color:#9db0c8;margin:0 0 18px}.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#2d8cff,#4ae1ff)}.meter{height:9px;background:#0a1726;border-radius:999px;border:1px solid #29415e;overflow:hidden;margin-top:10px}.meter>div{height:100%;width:0;background:linear-gradient(90deg,#4fe28d,#ffe067,#ff667d)}.status{text-align:center;color:#8ea4bd;font-size:12px;margin:11px 0 0}.controls{display:flex;gap:10px;margin-top:10px}.controls button{flex:1;padding:12px;border-radius:12px;border:1px solid #29445f;background:#102039;color:#eef7ff;font-weight:850}@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}.head h1{font-size:26px}.toolbar{flex-wrap:wrap}.toolbar button{min-width:45%}}
-</style></head><body><main><a href="index.html">← Back to Arcade</a><div class="head"><div><h1>🏒 Hockey Shootout</h1><p class="sub">Pick your corner. Charge the shot. Beat the goalie.</p></div></div><div class="hud"><div class="box"><span>GOALS</span><strong id="goals">0</strong></div><div class="box"><span>SHOTS</span><strong id="shots">0/10</strong></div><div class="box"><span>STREAK</span><strong id="streak">0</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div></div><div class="toolbar"><button id="diff">Difficulty: Pro</button><button id="shotType">Shot: Wrist</button></div><div class="stage"><canvas id="game" width="700" height="760"></canvas><div class="overlay" id="overlay"><div class="panel"><h2 id="title">Hockey Shootout</h2><p id="message">Move the target inside the net, hold to charge your shot, then release. Score as many as you can in 10 attempts.</p><button class="primary" id="start">Start Shootout</button></div></div></div><div class="meter"><div id="powerFill"></div></div><div class="controls"><button id="shoot">Hold to Shoot</button><button id="reset">Restart</button></div><p class="status" id="status">Aim with your mouse/finger. Hold Space or the Shoot button to charge.</p><script>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#16355c,#07111f 58%);color:#f7fbff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}main{width:min(100%,720px)}a{color:#b9cce8;text-decoration:none;font-weight:800;font-size:14px}.head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin:12px 0 14px}.head h1{font-size:31px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8fa4bf;font-size:13px}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:10px}.box{background:#0d1a2a;border:1px solid #203652;border-radius:14px;padding:10px 12px}.box span{display:block;color:#7890ae;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:19px}.toolbar{display:flex;gap:9px;margin-bottom:10px}.toolbar button{flex:1;padding:11px 8px;background:#102037;color:#e8f2ff;border:1px solid #27415f;border-radius:12px;font-weight:850}.toolbar button.active{background:linear-gradient(90deg,#1d6fd1,#24bde6);border-color:#60d9ff;box-shadow:0 0 0 2px #55cfff22}.stage{position:relative;overflow:hidden;border:1px solid #294566;border-radius:22px;background:#d9f6ff;box-shadow:0 24px 70px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#07111fd1;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,390px);padding:24px;background:#0c1a2be8;border:1px solid #294a70;border-radius:20px}.panel h2{font-size:28px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.55;color:#9db0c8;margin:0 0 18px}.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#2d8cff,#4ae1ff)}.meter{height:9px;background:#0a1726;border-radius:999px;border:1px solid #29415e;overflow:hidden;margin-top:10px}.meter>div{height:100%;width:0;background:linear-gradient(90deg,#4fe28d,#ffe067,#ff667d)}.status{text-align:center;color:#8ea4bd;font-size:12px;margin:11px 0 0}.controls{display:flex;gap:10px;margin-top:10px}.controls button{flex:1;padding:12px;border-radius:12px;border:1px solid #29445f;background:#102039;color:#eef7ff;font-weight:850}@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}.head h1{font-size:26px}.toolbar{flex-wrap:wrap}.toolbar button{min-width:45%}}
+</style></head><body><main><a href="index.html">← Back to Arcade</a><div class="head"><div><h1>🏒 Hockey Shootout</h1><p class="sub">Pick your corner. Charge the shot. Beat the goalie.</p></div></div><div class="hud"><div class="box"><span>GOALS</span><strong id="goals">0</strong></div><div class="box"><span>SHOTS</span><strong id="shots">0/10</strong></div><div class="box"><span>STREAK</span><strong id="streak">0</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div></div><div class="toolbar" id="difficultyBar"><button class="diffBtn" data-diff="0">Rookie</button><button class="diffBtn active" data-diff="1">Pro</button><button class="diffBtn" data-diff="2">Elite</button></div><div class="toolbar" id="shotBar"><button class="shotBtn active" data-shot="0">Wrist</button><button class="shotBtn" data-shot="1">Snap</button><button class="shotBtn" data-shot="2">Slap</button></div><div class="stage"><canvas id="game" width="700" height="760"></canvas><div class="overlay" id="overlay"><div class="panel"><h2 id="title">Hockey Shootout</h2><p id="message">Move the target inside the net, hold to charge your shot, then release. Score as many as you can in 10 attempts.</p><button class="primary" id="start">Start Shootout</button></div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#8ea4bd"><span>SHOT POWER</span><strong id="powerText">0%</strong></div><div class="meter"><div id="powerFill"></div></div><div class="controls"><button id="shoot">Hold to Shoot</button><button id="reset">Restart</button></div><p class="status" id="status">Aim with mouse/finger. Hold Space or HOLD TO SHOOT — longer hold = harder shot.</p><script>
 const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
 let mode='ready',difficulty=1,shotType=0,goals=0,shots=0,streak=0,best=+(localStorage.getItem('hs_hockey')||0),aim={x:350,y:190},charging=false,power=0,dir=1,puck={x:350,y:640,r:13,moving:false},goalie={x:350,y:245,target:350,react:0},result='',resultTime=0,last=0;
-const diffs=[{name:'Rookie',reaction:.42,reach:78},{name:'Pro',reaction:.27,reach:96},{name:'Elite',reaction:.16,reach:116}],types=[{name:'Wrist',speed:900,acc:1},{name:'Snap',speed:1050,acc:.93},{name:'Slap',speed:1220,acc:.86}];
+const diffs=[
+{name:'Rookie',reaction:.50,move:250,saveRadius:42,guess:.20},
+{name:'Pro',reaction:.28,move:390,saveRadius:54,guess:.45},
+{name:'Elite',reaction:.12,move:560,saveRadius:65,guess:.70}
+],types=[
+{name:'Wrist',speed:820,accuracy:1.00,powerBonus:.10},
+{name:'Snap',speed:1000,accuracy:.94,powerBonus:.18},
+{name:'Slap',speed:1240,accuracy:.86,powerBonus:.28}
+];
 $('best').textContent=best;const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-function hud(){$('goals').textContent=goals;$('shots').textContent=shots+'/10';$('streak').textContent=streak;$('best').textContent=best;$('diff').textContent='Difficulty: '+diffs[difficulty].name;$('shotType').textContent='Shot: '+types[shotType].name}
-function resetRound(){puck={x:350,y:640,r:13,moving:false};aim={x:350,y:190};goalie={x:350,y:245,target:350,react:0};charging=false;power=0;dir=1;result='';$('powerFill').style.width='0%'}
+function hud(){$('goals').textContent=goals;$('shots').textContent=shots+'/10';$('streak').textContent=streak;$('best').textContent=best;document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===difficulty));document.querySelectorAll('.shotBtn').forEach(b=>b.classList.toggle('active',+b.dataset.shot===shotType))}
+function resetRound(){puck={x:350,y:640,r:13,moving:false};aim={x:350,y:190};goalie={x:350,y:245,target:350,react:0};charging=false;power=0;dir=1;result='';$('powerFill').style.width='0%';$('powerText').textContent='0%'}
 function start(){goals=shots=streak=0;resetRound();mode='play';$('overlay').hidden=true;hud();last=performance.now()}
 function finish(){mode='over';if(goals>best){best=goals;localStorage.setItem('hs_hockey',best)}hud();$('title').textContent='Shootout Complete';$('message').textContent='You scored '+goals+' of 10. Best: '+best+'.';$('start').textContent='Play Again';$('overlay').hidden=false}
-function shoot(){if(mode!=='play'||puck.moving||result)return;charging=false;shots++;const t=types[shotType],spread=(1-power)*65+(1-t.acc)*55,tx=clamp(aim.x+(Math.random()-.5)*spread,170,530),ty=clamp(aim.y+(Math.random()-.5)*spread*.55,110,300);puck={...puck,moving:true,tx,ty,speed:t.speed*(.55+.55*power),startX:puck.x,startY:puck.y,progress:0};goalie.react=diffs[difficulty].reaction+(Math.random()*.08);goalie.target=tx;hud()}
+function shoot(){
+ if(mode!=='play'||puck.moving||result||!charging)return;
+ charging=false;shots++;
+ const t=types[shotType],d=diffs[difficulty];
+ const charged=Math.max(.08,power);
+ const spread=(1-charged)*78+(1-t.accuracy)*95;
+ const tx=clamp(aim.x+(Math.random()-.5)*spread,155,545);
+ const ty=clamp(aim.y+(Math.random()-.5)*spread*.65,90,315);
+ const shotSpeed=t.speed*(.45+charged*(.65+t.powerBonus));
+ puck={...puck,moving:true,tx,ty,speed:shotSpeed,startX:puck.x,startY:puck.y,progress:0};
+ goalie.react=d.reaction;
+ const readShot=Math.random()<d.guess;
+ goalie.target=readShot?tx:clamp(tx+(Math.random()-.5)*150,180,520);
+ hud();
+}
 function setAim(px,py){const r=c.getBoundingClientRect();aim.x=clamp((px-r.left)*W/r.width,175,525);aim.y=clamp((py-r.top)*H/r.height,105,305)}
 c.addEventListener('pointermove',e=>setAim(e.clientX,e.clientY));c.addEventListener('pointerdown',e=>{setAim(e.clientX,e.clientY);beginCharge()});c.addEventListener('pointerup',()=>shoot());
 function beginCharge(){if(mode==='play'&&!puck.moving&&!result){charging=true}}
 $('shoot').addEventListener('pointerdown',e=>{e.preventDefault();beginCharge()});$('shoot').addEventListener('pointerup',e=>{e.preventDefault();shoot()});
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();beginCharge()}});document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();shoot()}});
-$('diff').onclick=()=>{if(mode==='play')return;difficulty=(difficulty+1)%diffs.length;hud()};$('shotType').onclick=()=>{if(mode==='play')return;shotType=(shotType+1)%types.length;hud()};$('reset').onclick=start;$('start').onclick=start;
-function update(dt){if(mode!=='play')return;if(charging){power+=dir*dt*1.35;if(power>=1){power=1;dir=-1}if(power<=.15){power=.15;dir=1}$('powerFill').style.width=Math.round(power*100)+'%'}if(puck.moving){puck.progress+=dt*puck.speed/560;const t=clamp(puck.progress,0,1);puck.x=puck.startX+(puck.tx-puck.startX)*t;puck.y=puck.startY+(puck.ty-puck.startY)*t;goalie.react-=dt;if(goalie.react<=0){const reach=diffs[difficulty].reach;goalie.x+=clamp(goalie.target-goalie.x,-reach*dt*4,reach*dt*4)}if(t>=1){puck.moving=false;const inNet=puck.tx>155&&puck.tx<545&&puck.ty>95&&puck.ty<310;const save=Math.abs(puck.tx-goalie.x)<diffs[difficulty].reach*.62&&puck.ty>150;const scored=inNet&&!save;if(scored){goals++;streak++;result='GOAL!'}else{streak=0;result=save?'SAVED!':'MISSED!'}resultTime=1.05;hud()}}if(result){resultTime-=dt;if(resultTime<=0){if(shots>=10)finish();else resetRound()}}}
+document.querySelectorAll('.diffBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;difficulty=+b.dataset.diff;hud()});document.querySelectorAll('.shotBtn').forEach(b=>b.onclick=()=>{if(puck.moving||result)return;shotType=+b.dataset.shot;hud()});$('reset').onclick=start;$('start').onclick=start;
+function update(dt){
+ if(mode!=='play')return;
+ if(charging){
+   power+=dir*dt*1.05;
+   if(power>=1){power=1;dir=-1}
+   if(power<=.08){power=.08;dir=1}
+   const pct=Math.round(power*100);
+   $('powerFill').style.width=pct+'%';
+   $('powerText').textContent=pct+'%';
+ }
+ if(puck.moving){
+   const d=diffs[difficulty];
+   puck.progress+=dt*puck.speed/560;
+   const t=clamp(puck.progress,0,1);
+   puck.x=puck.startX+(puck.tx-puck.startX)*t;
+   puck.y=puck.startY+(puck.ty-puck.startY)*t;
+   goalie.react-=dt;
+   if(goalie.react<=0){
+     const dx=goalie.target-goalie.x;
+     goalie.x+=clamp(dx,-d.move*dt,d.move*dt);
+   }
+   if(t>=1){
+     puck.moving=false;
+     const inNet=puck.tx>150&&puck.tx<550&&puck.ty>88&&puck.ty<318;
+     const dx=Math.abs(puck.tx-goalie.x);
+     const verticalSave=puck.ty>145;
+     const gloveSave=puck.ty<=145&&dx<d.saveRadius*.72;
+     const bodySave=verticalSave&&dx<d.saveRadius;
+     const saved=gloveSave||bodySave;
+     const scored=inNet&&!saved;
+     if(scored){goals++;streak++;result='GOAL!'}else{streak=0;result=saved?'SAVED!':'MISSED!'}
+     resultTime=1.05;hud();
+   }
+ }
+ if(result){
+   resultTime-=dt;
+   if(resultTime<=0){if(shots>=10)finish();else resetRound()}
+ }
+}
 function rounded(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
 function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#dff7ff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#9fd5e7';ctx.lineWidth=4;ctx.beginPath();ctx.arc(W/2,430,115,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#e64b5d';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,355);ctx.lineTo(W,355);ctx.stroke();ctx.strokeStyle='#4285d4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,510);ctx.lineTo(W,510);ctx.stroke();ctx.fillStyle='#d2e8ef';ctx.fillRect(135,80,430,240);ctx.strokeStyle='#e22f45';ctx.lineWidth=12;ctx.strokeRect(145,88,410,230);for(let x=160;x<550;x+=24){ctx.strokeStyle='#a8bcc4';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,92);ctx.lineTo(x,315);ctx.stroke()}for(let y=105;y<315;y+=22){ctx.beginPath();ctx.moveTo(150,y);ctx.lineTo(550,y);ctx.stroke()}rounded(goalie.x-34,205,68,82,18,'#f6f7fb');rounded(goalie.x-50,250,100,28,12,'#233a66');ctx.fillStyle='#111827';ctx.beginPath();ctx.arc(goalie.x,225,20,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#56c6ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(aim.x,aim.y,18,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(aim.x-26,aim.y);ctx.lineTo(aim.x+26,aim.y);ctx.moveTo(aim.x,aim.y-26);ctx.lineTo(aim.x,aim.y+26);ctx.stroke();ctx.fillStyle='#101820';ctx.beginPath();ctx.ellipse(puck.x,puck.y,puck.r+5,puck.r*.65,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3b2b1d';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(280,665);ctx.lineTo(345,625);ctx.lineTo(380,635);ctx.stroke();if(result){ctx.fillStyle='#06121dcc';ctx.fillRect(0,0,W,H);ctx.fillStyle=result==='GOAL!'?'#5ff19a':'#ff7a8c';ctx.font='900 68px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2)}}
 function frame(now){const dt=Math.min((now-last)/1000,.033);last=now;update(dt);draw();requestAnimationFrame(frame)}hud();resetRound();requestAnimationFrame(frame);
