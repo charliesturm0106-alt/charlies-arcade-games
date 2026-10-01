@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07131f">
+<title>Ski Rush · Charlie's Arcade</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#174064,#07131f 60%);color:#f5fbff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}
+main{width:min(100%,820px)}
+a{color:#b9cee1;text-decoration:none;font-weight:800;font-size:14px}
+.head{margin:12px 0 14px}.head h1{font-size:32px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#8da6bb;font-size:13px}
+.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}
+.box{background:#0c1a2a;border:1px solid #223b51;border-radius:14px;padding:10px 12px}.box span{display:block;color:#7690a8;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:18px}
+.stage{position:relative;overflow:hidden;border:1px solid #2c4d67;border-radius:22px;background:#e7f8ff;box-shadow:0 24px 70px #0008}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#06111ed8;backdrop-filter:blur(5px);padding:24px;text-align:center}
+.overlay[hidden]{display:none}
+.panel{width:min(100%,440px);padding:24px;background:#0c1a2bed;border:1px solid #315675;border-radius:20px}.panel h2{font-size:29px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.58;color:#a2b6c8;margin:0 0 18px}
+.primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#1b9af1,#48d5ff)}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px;margin-top:10px}.controls button{padding:14px 5px;border-radius:12px;border:1px solid #29485e;background:#0f2234;color:#eef9ff;font-weight:900;touch-action:none}.controls .trick{background:linear-gradient(90deg,#7a56ff,#c65cff)}
+.status{text-align:center;color:#8198aa;font-size:12px;margin:11px 0 0;line-height:1.5}
+@media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.controls{grid-template-columns:repeat(2,1fr)}.head h1{font-size:27px}}
+</style>
+</head>
+<body>
+<main>
+<a href="index.html">← Back to Arcade</a>
+<div class="head"><h1>🎿 Ski Rush</h1><p class="sub">Carve fast. Hit the gates. Send the jumps.</p></div>
+
+<div class="hud">
+  <div class="box"><span>SCORE</span><strong id="score">0</strong></div>
+  <div class="box"><span>SPEED</span><strong id="speed">0 MPH</strong></div>
+  <div class="box"><span>GATES</span><strong id="gates">0</strong></div>
+  <div class="box"><span>COMBO</span><strong id="combo">x1</strong></div>
+  <div class="box"><span>BEST</span><strong id="best">0</strong></div>
+</div>
+
+<div class="stage">
+  <canvas id="game" width="760" height="860"></canvas>
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="title">Ski Rush</h2>
+      <p id="message"><b>A/D or ←/→</b> carve. <b>W/↑</b> tucks for more speed. <b>S/↓</b> brakes. Hit the blue/red slalom gates, avoid trees and rocks, and press <b>Space</b> in the air to throw tricks.</p>
+      <button class="primary" id="start">Start Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="left">◀ CARVE</button>
+  <button id="tuck">TUCK</button>
+  <button id="brake">BRAKE</button>
+  <button id="right">CARVE ▶</button>
+</div>
+<div class="controls" style="grid-template-columns:1fr"><button id="trick" class="trick">TRICK / SPACE</button></div>
+<p class="status">A/D or arrows = carve · W = tuck · S = brake · Space = trick while airborne · R = restart</p>
+
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
+const keys={left:false,right:false,tuck:false,brake:false};
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const rand=(a,b)=>a+Math.random()*(b-a);
+
+let mode='ready',last=0,score=0,best=+(localStorage.getItem('ski_rush_best')||0),distance=0,gates=0,combo=1;
+let objects=[],particles=[],tracks=[],spawnGateAt=380,spawnObstacleAt=220,spawnRampAt=1050,nextSafeX=380;
+let shake=0,flash=0,message='',messageTimer=0;
+
+const skier={
+  x:380,y:690,vx:0,lean:0,speed:285,
+  airborne:false,airT:0,airDuration:0,jumpPower:0,trickSpin:0,trickCount:0,
+  lives:3,invuln:0
+};
+
+$('best').textContent=best;
+
+function hud(){
+  $('score').textContent=Math.floor(score);
+  $('speed').textContent=Math.round(skier.speed*.19)+' MPH';
+  $('gates').textContent=gates;
+  $('combo').textContent='x'+combo;
+  $('best').textContent=best;
+}
+
+function reset(){
+  mode='play';score=0;distance=0;gates=0;combo=1;
+  objects=[];particles=[];tracks=[];
+  spawnGateAt=380;spawnObstacleAt=210;spawnRampAt=1000;nextSafeX=380;
+  shake=0;flash=0;message='';messageTimer=0;
+  skier.x=380;skier.y=690;skier.vx=0;skier.lean=0;skier.speed=285;
+  skier.airborne=false;skier.airT=0;skier.airDuration=0;skier.jumpPower=0;skier.trickSpin=0;skier.trickCount=0;
+  skier.lives=3;skier.invuln=0;
+  $('overlay').hidden=true;
+  last=performance.now();
+  hud();
+}
+
+function endRun(){
+  mode='over';
+  if(score>best){
+    best=Math.floor(score);
+    localStorage.setItem('ski_rush_best',best);
+  }
+  hud();
+  $('title').textContent='Run Over';
+  $('message').textContent='Score: '+Math.floor(score)+' · Gates: '+gates+' · Best: '+best+'.';
+  $('start').textContent='Ski Again';
+  $('overlay').hidden=false;
+}
+
+function showMessage(text,time=.8){
+  message=text;messageTimer=time;
+}
+
+function spawnGate(){
+  const margin=120;
+  const gateWidth=rand(150,205);
+  const center=clamp(nextSafeX+rand(-120,120),margin+gateWidth/2,W-margin-gateWidth/2);
+  nextSafeX=center;
+  const color=Math.random()<.5?'#2f7df4':'#f04456';
+  objects.push({type:'gate',y:-70,left:center-gateWidth/2,right:center+gateWidth/2,width:gateWidth,color,passed:false});
+  spawnGateAt+=rand(520,690);
+}
+
+function spawnObstacleRow(){
+  const lanes=[110,220,330,440,550,650];
+  const safe=lanes.reduce((bestLane,l)=>Math.abs(l-nextSafeX)<Math.abs(bestLane-nextSafeX)?l:bestLane,lanes[0]);
+  const candidates=lanes.filter(l=>Math.abs(l-safe)>85).sort(()=>Math.random()-.5);
+  const count=Math.random()<.5?2:3;
+  for(let i=0;i<count;i++){
+    const x=candidates[i]+rand(-24,24);
+    const type=Math.random()<.72?'tree':'rock';
+    objects.push({type,x,y:rand(-180,-65),r:type==='tree'?25:21,hit:false});
+  }
+  spawnObstacleAt+=rand(310,430);
+}
+
+function spawnRamp(){
+  const x=clamp(nextSafeX+rand(-85,85),125,W-125);
+  objects.push({type:'ramp',x,y:-100,w:94,h:34,used:false});
+  nextSafeX=x;
+  spawnRampAt+=rand(1350,1750);
+}
+
+function crash(){
+  if(skier.invuln>0||skier.airborne)return;
+  skier.lives--;
+  skier.invuln=1.45;
+  skier.speed=Math.max(205,skier.speed*.62);
+  combo=1;
+  shake=.45;flash=.22;
+  showMessage(skier.lives>0?'CRASH!  '+skier.lives+' RUNS LEFT':'WIPEOUT!',1);
+  for(let i=0;i<24;i++) particles.push({x:skier.x,y:skier.y+15,vx:rand(-120,120),vy:rand(-80,40),life:rand(.35,.8),size:rand(2,6)});
+  if(skier.lives<=0) setTimeoutSafeEnd=.65;
+}
+
+let setTimeoutSafeEnd=0;
+
+function tryTrick(){
+  if(mode!=='play'||!skier.airborne)return;
+  if(skier.trickCount>=3)return;
+  skier.trickCount++;
+  skier.trickSpin+=Math.PI*(Math.random()<.5?1:-1);
+  score+=125*combo;
+  showMessage(skier.trickCount===1?'180!':skier.trickCount===2?'360!':'540!',.55);
+}
+
+function rectHitCircle(x,y,w,h,cx,cy,r){
+  const nx=clamp(cx,x,x+w),ny=clamp(cy,y,y+h);
+  const dx=cx-nx,dy=cy-ny;
+  return dx*dx+dy*dy<r*r;
+}
+
+function update(dt){
+  if(mode!=='play')return;
+
+  if(setTimeoutSafeEnd>0){
+    setTimeoutSafeEnd-=dt;
+    if(setTimeoutSafeEnd<=0){endRun();return}
+  }
+
+  shake=Math.max(0,shake-dt);
+  flash=Math.max(0,flash-dt);
+  messageTimer=Math.max(0,messageTimer-dt);
+  skier.invuln=Math.max(0,skier.invuln-dt);
+
+  const steer=(keys.right?1:0)-(keys.left?1:0);
+  const targetVX=steer*(skier.airborne?155:335);
+  skier.vx+=(targetVX-skier.vx)*Math.min(1,dt*(skier.airborne?5:10));
+  skier.x=clamp(skier.x+skier.vx*dt,45,W-45);
+  skier.lean+=(steer*.58-skier.lean)*Math.min(1,dt*9);
+
+  const targetSpeed=keys.brake?205:keys.tuck?500:365;
+  skier.speed+=(targetSpeed-skier.speed)*Math.min(1,dt*(keys.brake?2.9:1.35));
+  const difficultyBoost=Math.min(120,distance/45);
+  skier.speed=clamp(skier.speed+dt*difficultyBoost*.12,190,535);
+
+  const scroll=skier.speed*dt;
+  distance+=scroll;
+  score+=scroll*.035*combo;
+
+  if(distance>=spawnGateAt) spawnGate();
+  if(distance>=spawnObstacleAt) spawnObstacleRow();
+  if(distance>=spawnRampAt) spawnRamp();
+
+  if(skier.airborne){
+    skier.airT+=dt;
+    if(skier.airT>=skier.airDuration){
+      skier.airborne=false;
+      const landingBonus=skier.trickCount*180*combo;
+      if(skier.trickCount>0){
+        score+=landingBonus;
+        combo=Math.min(8,combo+skier.trickCount);
+        showMessage('LANDED +'+Math.floor(landingBonus),.8);
+      }
+      skier.trickCount=0;
+      skier.trickSpin=0;
+    }
+  }
+
+  for(const o of objects){
+    o.y+=scroll;
+
+    if(o.type==='gate'&&!o.passed&&o.y>skier.y-15){
+      o.passed=true;
+      if(skier.x>o.left&&skier.x<o.right){
+        gates++;
+        score+=250*combo;
+        combo=Math.min(8,combo+1);
+        showMessage('GATE +'+250*(combo-1),.55);
+      }else{
+        combo=1;
+        showMessage('MISSED GATE',.65);
+      }
+    }
+
+    if((o.type==='tree'||o.type==='rock')&&!o.hit&&!skier.airborne&&skier.invuln<=0){
+      const rr=o.type==='tree'?20:18;
+      if(Math.hypot(skier.x-o.x,skier.y-o.y)<rr+18){
+        o.hit=true;
+        crash();
+      }
+    }
+
+    if(o.type==='ramp'&&!o.used&&!skier.airborne){
+      if(rectHitCircle(o.x-o.w/2,o.y-o.h/2,o.w,o.h,skier.x,skier.y,18)){
+        o.used=true;
+        skier.airborne=true;
+        skier.airT=0;
+        skier.airDuration=.78+skier.speed/1200;
+        skier.jumpPower=skier.speed;
+        skier.trickCount=0;
+        skier.trickSpin=0;
+        score+=80*combo;
+        showMessage('AIR!',.5);
+      }
+    }
+  }
+
+  objects=objects.filter(o=>o.y<H+120);
+
+  if(!skier.airborne&&Math.abs(skier.vx)>105){
+    tracks.push({x:skier.x-9,y:skier.y+27,life:1});
+    tracks.push({x:skier.x+9,y:skier.y+27,life:1});
+  }
+  tracks.forEach(t=>{t.y+=scroll;t.life-=dt*.18});
+  tracks=tracks.filter(t=>t.y<H+30&&t.life>0);
+
+  particles.forEach(p=>{
+    p.x+=p.vx*dt;p.y+=(p.vy+scroll*.18)*dt;p.vy+=90*dt;p.life-=dt;
+  });
+  particles=particles.filter(p=>p.life>0);
+
+  hud();
+}
+
+function drawTree(o){
+  ctx.save();ctx.translate(o.x,o.y);
+  ctx.fillStyle='#6e4a2c';ctx.fillRect(-5,16,10,24);
+  ctx.fillStyle='#174b38';
+  ctx.beginPath();ctx.moveTo(0,-38);ctx.lineTo(-28,10);ctx.lineTo(28,10);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(0,-20);ctx.lineTo(-33,26);ctx.lineTo(33,26);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#fff';ctx.globalAlpha=.7;
+  ctx.beginPath();ctx.moveTo(0,-36);ctx.lineTo(-10,-17);ctx.lineTo(11,-17);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+function drawRock(o){
+  ctx.save();ctx.translate(o.x,o.y);
+  ctx.fillStyle='#788898';ctx.beginPath();
+  ctx.moveTo(-22,15);ctx.lineTo(-14,-13);ctx.lineTo(4,-22);ctx.lineTo(22,-6);ctx.lineTo(18,18);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#aebbc6';ctx.beginPath();ctx.moveTo(-12,-9);ctx.lineTo(3,-17);ctx.lineTo(12,-7);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+function drawGate(o){
+  ctx.strokeStyle=o.color;ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(o.left,o.y-35);ctx.lineTo(o.left,o.y+35);ctx.moveTo(o.right,o.y-35);ctx.lineTo(o.right,o.y+35);ctx.stroke();
+  ctx.fillStyle=o.color;
+  ctx.beginPath();ctx.moveTo(o.left,o.y-34);ctx.lineTo(o.left+28,o.y-22);ctx.lineTo(o.left,o.y-10);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(o.right,o.y-34);ctx.lineTo(o.right-28,o.y-22);ctx.lineTo(o.right,o.y-10);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(70,110,140,.16)';ctx.lineWidth=2;ctx.setLineDash([8,8]);
+  ctx.beginPath();ctx.moveTo(o.left,o.y+4);ctx.lineTo(o.right,o.y+4);ctx.stroke();ctx.setLineDash([]);
+}
+
+function drawRamp(o){
+  ctx.save();ctx.translate(o.x,o.y);
+  ctx.fillStyle='#bfe8f6';ctx.beginPath();ctx.moveTo(-o.w/2,o.h/2);ctx.lineTo(o.w/2,o.h/2);ctx.lineTo(o.w/2-17,-o.h/2);ctx.lineTo(-o.w/2+17,-o.h/2);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#69b7d5';ctx.lineWidth=4;ctx.stroke();
+  ctx.fillStyle='#4aa4cf';ctx.font='900 16px system-ui';ctx.textAlign='center';ctx.fillText('JUMP',0,6);ctx.textAlign='left';
+  ctx.restore();
+}
+
+function drawSkier(){
+  const jumpHeight=skier.airborne?Math.sin(Math.min(1,skier.airT/skier.airDuration)*Math.PI)*58:0;
+  const spin=skier.airborne?skier.trickSpin*Math.sin(Math.min(1,skier.airT/skier.airDuration)*Math.PI):0;
+
+  ctx.save();
+  ctx.translate(skier.x,skier.y-jumpHeight);
+  ctx.rotate(skier.lean+spin);
+
+  if(skier.invuln>0&&Math.floor(skier.invuln*12)%2===0)ctx.globalAlpha=.35;
+
+  ctx.strokeStyle='#24a6ff';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-11,24);ctx.lineTo(-18,52);ctx.moveTo(11,24);ctx.lineTo(18,52);ctx.stroke();
+
+  ctx.strokeStyle='#202b38';ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(-8,6);ctx.lineTo(-12,27);ctx.moveTo(8,6);ctx.lineTo(12,27);ctx.stroke();
+
+  ctx.fillStyle='#237fe1';ctx.beginPath();ctx.roundRect(-17,-22,34,37,8);ctx.fill();
+  ctx.fillStyle='#111827';ctx.beginPath();ctx.arc(0,-35,13,0,Math.PI*2);ctx.fill();
+
+  ctx.strokeStyle='#586675';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-27,22);ctx.moveTo(13,-7);ctx.lineTo(27,22);ctx.stroke();
+
+  ctx.restore();
+
+  if(skier.airborne){
+    ctx.fillStyle='rgba(40,80,110,.22)';
+    ctx.beginPath();ctx.ellipse(skier.x,skier.y+46,35,10,0,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function draw(){
+  const sx=shake>0?rand(-7,7)*shake*2:0,sy=shake>0?rand(-5,5)*shake*2:0;
+  ctx.save();ctx.translate(sx,sy);
+
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#d9f4ff');grad.addColorStop(1,'#f8fdff');
+  ctx.fillStyle=grad;ctx.fillRect(-20,-20,W+40,H+40);
+
+  ctx.strokeStyle='rgba(91,156,190,.12)';ctx.lineWidth=2;
+  for(let y=(distance*.18)%90-90;y<H;y+=90){
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+28);ctx.stroke();
+  }
+
+  tracks.forEach(t=>{
+    ctx.strokeStyle='rgba(84,129,153,'+(t.life*.24)+')';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(t.x,t.y-18);ctx.lineTo(t.x,t.y+18);ctx.stroke();
+  });
+
+  const sorted=[...objects].sort((a,b)=>a.y-b.y);
+  for(const o of sorted){
+    if(o.type==='tree')drawTree(o);
+    else if(o.type==='rock')drawRock(o);
+    else if(o.type==='gate')drawGate(o);
+    else if(o.type==='ramp')drawRamp(o);
+  }
+
+  particles.forEach(p=>{
+    ctx.fillStyle='rgba(210,245,255,'+Math.min(1,p.life*2)+')';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  });
+
+  drawSkier();
+
+  ctx.fillStyle='#0b2942d8';ctx.beginPath();ctx.roundRect(18,18,185,82,14);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='800 15px system-ui';
+  ctx.fillText('RUNS LEFT: '+skier.lives,34,46);
+  ctx.fillText('DISTANCE: '+Math.floor(distance/10)+' m',34,72);
+
+  if(messageTimer>0){
+    ctx.textAlign='center';ctx.font='900 34px system-ui';
+    ctx.fillStyle=message.includes('CRASH')||message.includes('WIPE')||message.includes('MISSED')?'#ff596c':'#247edb';
+    ctx.fillText(message,W/2,145);
+    ctx.textAlign='left';
+  }
+
+  ctx.restore();
+
+  if(flash>0){
+    ctx.fillStyle='rgba(255,255,255,'+(flash*2.7)+')';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+function frame(now){
+  const dt=Math.min((now-last)/1000,.033);
+  last=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function bindHold(id,key){
+  const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[key]=true});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false));
+}
+bindHold('left','left');
+bindHold('right','right');
+bindHold('tuck','tuck');
+bindHold('brake','brake');
+$('trick').addEventListener('pointerdown',e=>{e.preventDefault();tryTrick()});
+
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['a','d','w','s','arrowleft','arrowright','arrowup','arrowdown',' ','r'].includes(k))e.preventDefault();
+  if(k==='a'||k==='arrowleft')keys.left=true;
+  if(k==='d'||k==='arrowright')keys.right=true;
+  if(k==='w'||k==='arrowup')keys.tuck=true;
+  if(k==='s'||k==='arrowdown')keys.brake=true;
+  if(e.code==='Space'&&!e.repeat)tryTrick();
+  if(k==='r'&&!e.repeat)reset();
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='a'||k==='arrowleft')keys.left=false;
+  if(k==='d'||k==='arrowright')keys.right=false;
+  if(k==='w'||k==='arrowup')keys.tuck=false;
+  if(k==='s'||k==='arrowdown')keys.brake=false;
+});
+
+$('start').onclick=reset;
+window.addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
+hud();
+requestAnimationFrame(frame);
+</script>
+</main>
+</body>
+</html>
