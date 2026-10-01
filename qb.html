@@ -17,7 +17,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 .panel{width:min(100%,460px);padding:24px;background:#0d1b12ef;border:1px solid #356445;border-radius:20px}.panel h2{font-size:29px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.58;color:#a5bcaa;margin:0 0 18px}
 .primary{width:100%;padding:13px;border:0;border-radius:13px;color:white;font-weight:900;background:linear-gradient(90deg,#32a852,#67d77c)}
 .powerWrap{display:flex;align-items:center;gap:10px;margin-top:10px}.powerLabel{font-size:11px;font-weight:900;color:#7f9986;min-width:80px}.power{height:13px;flex:1;background:#102118;border:1px solid #31533a;border-radius:999px;overflow:hidden}.powerFill{height:100%;width:0;background:linear-gradient(90deg,#67df7f,#ffe16a,#ff766b)}
-.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #31533a;background:#102118;color:#effff3;font-weight:900;touch-action:none}.controls #throw{background:linear-gradient(90deg,#238d44,#58ca70)}
+.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #31533a;background:#102118;color:#effff3;font-weight:900;touch-action:none}.controls #throw{background:linear-gradient(90deg,#238d44,#58ca70)}
 .status{text-align:center;color:#809987;font-size:12px;margin:11px 0 0;line-height:1.5}
 @media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.head h1{font-size:27px}}
 </style>
@@ -42,7 +42,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 </div></div>
 </div>
 <div class="powerWrap"><span class="powerLabel">PASS POWER</span><div class="power"><div class="powerFill" id="powerFill"></div></div><strong id="powerText">0%</strong></div>
-<div class="controls"><button id="left">◀ MOVE</button><button id="throw">HOLD TO THROW</button><button id="right">MOVE ▶</button></div>
+<div class="controls"><button id="left">◀</button><button id="up">▲</button><button id="throw">HOLD TO THROW</button><button id="down">▼</button><button id="right">▶</button></div>
 <p class="status">WASD = move · Mouse/finger = aim · Hold Space = charge pass</p>
 <script>
 const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
@@ -160,7 +160,7 @@ function draw(){
 }
 function frame(now){const dt=Math.min((now-last)/1000,.033);last=now;update(dt);draw();requestAnimationFrame(frame)}
 function hold(id,key){const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[key]=true});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false))}
-hold('left','a');hold('right','d');
+hold('left','a');hold('right','d');hold('up','w');hold('down','s');
 $('throw').addEventListener('pointerdown',e=>{e.preventDefault();$('throw').setPointerCapture(e.pointerId);beginCharge()});
 ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>$('throw').addEventListener(ev,throwBall));
 document.addEventListener('keydown',e=>{
