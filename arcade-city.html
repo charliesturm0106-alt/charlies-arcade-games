@@ -36,9 +36,9 @@
 </div>
 
 <div class="menuShade" id="menuShade"><div class="menu">
- <div class="releaseTag">VERSION 1.3.1 · PURSUIT BALANCE</div>
+ <div class="releaseTag">VERSION 1.3.2 · PURSUIT TUNED</div>
  <h1 class="logo">ARCADE<br><span>CITY 3D</span></h1>
- <p>Arcade City 1.3.1: tougher police pursuits with interceptors, ram units, escalating backup, smarter roadblocks, and a longer search phase — plus private multiplayer.</p>
+ <p>Arcade City 1.3.2: tougher police pursuits with interceptors, ram units, escalating backup, smarter roadblocks, and a longer search phase — plus private multiplayer.</p>
  <div class="menuBtns">
   <button class="primary" id="driveBtn">DRIVE CITY<small>Continue your career</small></button>
   <button id="garageBtn">GARAGE & DEALER<small>Buy and switch cars</small></button>
@@ -674,22 +674,22 @@ function updatePlayer(dt){
 }
 
 function wantedLevel(){return wantedHeat<=0?0:Math.min(5,Math.ceil(wantedHeat/80))}
-function policeTargetCount(level){const desktop=[0,2,3,4,5,6],mobile=[0,2,3,4,4,5];return (PERF_MOBILE?mobile:desktop)[level]||0}
+function policeTargetCount(level){const desktop=[0,1,2,3,4,4],mobile=[0,1,2,3,3,4];return (PERF_MOBILE?mobile:desktop)[level]||0}
 function nearestRoadPoint(x,z){let bx=roadCenters[0],bz=roadCenters[0],dx=999,dz=999;for(const v of roadCenters){if(Math.abs(x-v)<dx){dx=Math.abs(x-v);bx=v}if(Math.abs(z-v)<dz){dz=Math.abs(z-v);bz=v}}return dx<dz?{x:bx,z,heading:0}:{x,z:bz,heading:Math.PI/2}}
 function createPatrolPolice(){const target=PERF_MOBILE?1:2;while(patrolPolice.length<target)patrolPolice.push(spawnTrafficAgent(true))}
 createPatrolPolice();
-function policeRoleFor(index){return index%4===1?'interceptor':index%4===2?'rammer':'pursuit'}
+function policeRoleFor(index){const lvl=wantedLevel();if(lvl>=4&&index===2)return 'rammer';if(lvl>=3&&index===1)return 'interceptor';return 'pursuit'}
 function policeSpawnPoint(index,role){
  const lvl=Math.max(1,wantedLevel()),fx=Math.sin(player.heading),fz=Math.cos(player.heading),sx=Math.sin(player.heading+Math.PI/2),sz=Math.cos(player.heading+Math.PI/2);
  let forward=-52-index*7,lateral=(index%2?1:-1)*(14+(index%3)*7);
- if(role==='interceptor'){forward=82+lvl*9+(index%2)*16;lateral=(index%2?1:-1)*(10+lvl*2.5)}
+ if(role==='interceptor'){forward=72+lvl*7+(index%2)*12;lateral=(index%2?1:-1)*(9+lvl*2)}
  else if(role==='rammer'){forward=-32-index*3;lateral=(index%2?1:-1)*(24+lvl*2)}
  const tx=clamp(player.pos.x+fx*forward+sx*lateral,-WORLD+20,WORLD-20),tz=clamp(player.pos.z+fz*forward+sz*lateral,-WORLD+20,WORLD-20);
  return nearestRoadPoint(tx,tz)
 }
 function configurePoliceUnit(p,index){
  const lvl=Math.max(1,wantedLevel()),role=policeRoleFor(index);
- p.role=role;p.accel=14+lvl*1.6+(role==='rammer'?2:0);p.turnRate=1.78+lvl*.12+(role==='interceptor'?.12:0);p.heading=Number.isFinite(p.heading)?p.heading:player.heading;p.speed=Math.max(15,p.speed||0);p.stuck=0;p.hitCooldown=0;p.repositionCooldown=0;p.lastX=p.mesh.position.x;p.lastZ=p.mesh.position.z;p.mesh.userData.pursuitRole=role;return p
+ p.role=role;p.accel=12+lvl*1.2+(role==='rammer'?1.2:0);p.turnRate=1.60+lvl*.09+(role==='interceptor'?.08:0);p.heading=Number.isFinite(p.heading)?p.heading:player.heading;p.speed=Math.max(15,p.speed||0);p.stuck=0;p.hitCooldown=0;p.repositionCooldown=0;p.lastX=p.mesh.position.x;p.lastZ=p.mesh.position.z;p.mesh.userData.pursuitRole=role;return p
 }
 function raiseWanted(amount){
  const before=wantedLevel();wantedHeat=clamp(wantedHeat+amount,0,400);const after=wantedLevel();peakWanted=Math.max(peakWanted,after);
@@ -706,7 +706,7 @@ function syncPolice(){
   police.push(configurePoliceUnit(p,index))
  }
  while(police.length>need){const p=police.pop();scene.remove(p.mesh)}
- if(lvl>=3){if(roadblockLevel!==lvl)ensureRoadblocks(true);else ensureRoadblocks(false)}else clearRoadblocks();
+ if(lvl>=4){if(roadblockLevel!==lvl)ensureRoadblocks(true);else ensureRoadblocks(false)}else clearRoadblocks();
  lastPoliceLevel=lvl
 }
 function clearPolice(){police.forEach(p=>scene.remove(p.mesh));police.length=0;clearRoadblocks();policeNearest=999;lastPoliceLevel=0;roadblockTimer=0;roadblockLevel=0}
@@ -717,17 +717,17 @@ function addRoadblock(distance,setIndex=0){
   const m=makeCar(0xe9edf3,.82);m.position.set(rp.x+(horizontal?0:lane*5.8),0,rp.z+(horizontal?lane*5.8:0));m.rotation.y=blockHeading;scene.add(m);roadblocks.push({mesh:m,x:m.position.x,z:m.position.z,r:4.6,type:'car',cooldown:0})
  }
  const center=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.3:6.5,.9,horizontal?6.5:1.3),new THREE.MeshStandardMaterial({color:0xffd94e,roughness:.72,metalness:.08}));center.position.set(rp.x,.45,rp.z);center.rotation.y=blockHeading;scene.add(center);roadblocks.push({mesh:center,x:rp.x,z:rp.z,r:3.8,type:'barrier',cooldown:0});
- if(lvl>=4){const strip=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.1:17,.08,horizontal?17:1.1),new THREE.MeshStandardMaterial({color:0x20242b,roughness:.95}));strip.position.set(rp.x,.07,rp.z);scene.add(strip);roadblocks.push({mesh:strip,x:rp.x,z:rp.z,r:8.2,type:'strip',cooldown:0})}
+ if(lvl>=5){const strip=new THREE.Mesh(new THREE.BoxGeometry(horizontal?1.1:17,.08,horizontal?17:1.1),new THREE.MeshStandardMaterial({color:0x20242b,roughness:.95}));strip.position.set(rp.x,.07,rp.z);scene.add(strip);roadblocks.push({mesh:strip,x:rp.x,z:rp.z,r:8.2,type:'strip',cooldown:0})}
 }
 function ensureRoadblocks(force=false){
- const lvl=wantedLevel();if(lvl<3)return;
+ const lvl=wantedLevel();if(lvl<4)return;
  if(roadblocks.length&&!force)return;
- clearRoadblocks();roadblockLevel=lvl;addRoadblock(118,0);if(lvl>=5&&Math.random()<.55)addRoadblock(205,1);roadblockTimer=Math.max(12,22-lvl*1.2);popup(lvl>=5?'🚧 ROADBLOCKS AHEAD':'🚧 POLICE ROADBLOCK AHEAD')
+ clearRoadblocks();roadblockLevel=lvl;addRoadblock(132,0);roadblockTimer=Math.max(20,30-lvl);popup('🚧 POLICE ROADBLOCK AHEAD')
 }
 function clearRoadblocks(){roadblocks.forEach(b=>scene.remove(b.mesh));roadblocks.length=0;roadblockLevel=0}
 function updateRoadblocks(dt,lvl){
- if(lvl<3){if(roadblocks.length)clearRoadblocks();return}
- roadblockTimer-=dt;let nearest=999;for(const b of roadblocks){b.cooldown=Math.max(0,(b.cooldown||0)-dt);nearest=Math.min(nearest,Math.hypot(player.pos.x-b.x,player.pos.z-b.z));if(Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<b.r&&b.cooldown<=0){b.cooldown=1.1;const hit=b.type==='strip'?7:13+lvl*1.4;addDamage(hit);player.speed*=b.type==='strip'?.52:-.08;wantedHeat=clamp(wantedHeat+5+lvl*1.2,0,400);sfx('hit')}}
+ if(lvl<4){if(roadblocks.length)clearRoadblocks();return}
+ roadblockTimer-=dt;let nearest=999;for(const b of roadblocks){b.cooldown=Math.max(0,(b.cooldown||0)-dt);nearest=Math.min(nearest,Math.hypot(player.pos.x-b.x,player.pos.z-b.z));if(Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<b.r&&b.cooldown<=0){b.cooldown=1.1;const hit=b.type==='strip'?5:10+lvl;addDamage(hit);player.speed*=b.type==='strip'?.62:-.05;wantedHeat=clamp(wantedHeat+3+lvl*.8,0,400);sfx('hit')}}
  if((!roadblocks.length)||(roadblockTimer<=0&&nearest>58))ensureRoadblocks(true)
 }
 function updatePatrolPolice(dt){if(chaseActive)return;for(const p of patrolPolice)updateTrafficAgent(p,dt)}
@@ -738,13 +738,13 @@ function updatePolice(dt){
  for(let i=0;i<police.length;i++){
   const p=police[i];p.hitCooldown=Math.max(0,(p.hitCooldown||0)-dt);p.repositionCooldown=Math.max(0,(p.repositionCooldown||0)-dt);
   const dx=player.pos.x-p.mesh.position.x,dz=player.pos.z-p.mesh.position.z,d=Math.hypot(dx,dz);nearest=Math.min(nearest,d);
-  const lead=p.role==='interceptor'?1.00+lvl*.07:p.role==='rammer'?.32:.55+lvl*.04;
+  const lead=p.role==='interceptor'?.82+lvl*.04:p.role==='rammer'?.25:.40+lvl*.03;
   let tx=player.pos.x+fx*playerSpeed*lead,tz=player.pos.z+fz*playerSpeed*lead;
   if(p.role==='interceptor'){const side=(i%2?1:-1)*(7+lvl*2);tx+=sx*side;tz+=sz*side}
   if(p.role==='rammer'&&d<18){tx=player.pos.x;tz=player.pos.z}
   const desired=Math.atan2(tx-p.mesh.position.x,tz-p.mesh.position.z),error=angleDiff(desired,p.heading);
-  let targetSpeed=Math.max(23+lvl*4.0,playerSpeed*(1.035+lvl*.025)+(p.role==='interceptor'?6:p.role==='rammer'?4:3));
-  if(d>105)targetSpeed*=1.08;if(d<11)targetSpeed=Math.max(16,playerSpeed*.86+3);targetSpeed=clamp(targetSpeed,17,82);
+  let targetSpeed=Math.max(21+lvl*3.2,playerSpeed*(1.015+lvl*.015)+(p.role==='interceptor'?3:p.role==='rammer'?2:1));
+  if(d>115)targetSpeed*=1.05;if(d<11)targetSpeed=Math.max(15,playerSpeed*.84+2);targetSpeed=clamp(targetSpeed,16,72);
   if(Math.abs(error)>.95)targetSpeed*=.78;else if(Math.abs(error)>.55)targetSpeed*=.9;
   p.speed=lerp(p.speed,targetSpeed,clamp(dt*(p.speed>targetSpeed?3.0:1.9+p.accel*.025),0,1));
   p.heading+=clamp(error,-p.turnRate*dt,p.turnRate*dt);
@@ -754,17 +754,17 @@ function updatePolice(dt){
   const moved=Math.hypot(p.mesh.position.x-oldX,p.mesh.position.z-oldZ);if(moved<.06&&p.speed>12)p.stuck=(p.stuck||0)+dt*.7;
   if((p.stuck||0)>1.6&&d>42&&p.repositionCooldown<=0){const rp=policeSpawnPoint(i,p.role);p.mesh.position.set(rp.x,0,rp.z);p.heading=player.heading;p.speed=Math.max(20,playerSpeed*.72);p.stuck=0;p.repositionCooldown=5}
   p.mesh.rotation.y=p.heading;p.mesh.userData.wheels?.forEach(w=>w.rotation.x-=p.speed*dt*.8);
-  if(d<5.2&&p.hitCooldown<=0){p.hitCooldown=.5;player.speed*=Math.max(.58,.80-lvl*.025);if(lvl>=4)player.heading+=angleDiff(p.heading,player.heading)*.055*lvl;addDamage(2+lvl*1.1);wantedHeat=clamp(wantedHeat+2+lvl*.7,0,400);sfx('hit')}
+  if(d<5&&p.hitCooldown<=0){p.hitCooldown=.58;player.speed*=Math.max(.68,.86-lvl*.02);if(lvl>=5)player.heading+=angleDiff(p.heading,player.heading)*.035*lvl;addDamage(1+lvl*.8);wantedHeat=clamp(wantedHeat+.5+lvl*.3,0,400);sfx('hit')}
  }
  updateRoadblocks(dt,lvl);policeNearest=nearest;
- const escapeDistance=72+lvl*7,required=5.5+lvl*1.55;policeEscapeNeed=required;
+ const escapeDistance=60+lvl*6,required=4+lvl;policeEscapeNeed=required;
  if(nearest>escapeDistance){
   escapeTimer+=dt;backupPulse=Math.max(0,backupPulse-dt);
-  if(escapeTimer>required)wantedHeat=Math.max(0,wantedHeat-dt*(10+lvl*1.8))
+  if(escapeTimer>required)wantedHeat=Math.max(0,wantedHeat-dt*(13+lvl*2))
  }else{
   escapeTimer=Math.max(0,escapeTimer-dt*2.8);backupPulse+=dt;
-  if(nearest<30)wantedHeat=clamp(wantedHeat+dt*(.35+lvl*.22),0,400);else wantedHeat=Math.max(1,wantedHeat-dt*.18);
-  const waveTime=Math.max(24,38-lvl*2.2);if(backupPulse>waveTime&&wantedHeat<400){backupPulse=0;const before=wantedLevel();wantedHeat=clamp(wantedHeat+6+lvl*2.5,0,400);const after=wantedLevel();if(after>before){popup('🚓 PURSUIT ESCALATED · '+after+'★');sfx('police')}}
+  if(nearest<24)wantedHeat=clamp(wantedHeat+dt*(.12+lvl*.08),0,400);else wantedHeat=Math.max(1,wantedHeat-dt*.28);
+  const waveTime=Math.max(34,52-lvl*2.5);if(backupPulse>waveTime&&wantedHeat<400){backupPulse=0;const before=wantedLevel();wantedHeat=clamp(wantedHeat+3+lvl*1.5,0,400);const after=wantedLevel();if(after>before){popup('🚓 PURSUIT ESCALATED · '+after+'★');sfx('police')}}
  }
  peakWanted=Math.max(peakWanted,wantedLevel());
  if(wantedHeat<=0){const rewardCash=700+peakWanted*650,rewardRep=45+peakWanted*36;reward(rewardCash,rewardRep);state.escapes++;popup('🚓 ESCAPED · reward '+rewardCash+' · +'+rewardRep+' REP');chaseActive=false;peakWanted=0;escapeTimer=0;chaseTime=0;backupPulse=0;clearPolice();createPatrolPolice();save()}
