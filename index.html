@@ -1,101 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Charlie's Arcade</title>
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:Arial,Helvetica,sans-serif;
-  color:#fff;
-  background:
-    radial-gradient(circle at 10% 10%,#6937ff 0,transparent 32%),
-    radial-gradient(circle at 90% 15%,#ff4d8d 0,transparent 30%),
-    radial-gradient(circle at 50% 100%,#0788ff 0,transparent 36%),
-    linear-gradient(135deg,#10142d,#171932 55%,#10142d);
-}
-header{text-align:center;padding:46px 20px 16px}
-header h1{margin:0;font-size:44px;letter-spacing:-1px}
-header p{color:#d3d6ec;font-size:17px}
-.games{
-  width:min(920px,94%);
-  margin:auto;
-  padding:22px 0 30px;
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:20px;
-}
-.card{
-  display:block;
-  text-decoration:none;
-  color:#fff;
-  padding:32px 24px;
-  border-radius:26px;
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 18px 45px rgba(0,0,0,.25);
-  transition:transform .12s ease,filter .12s ease;
-}
-.card:active{transform:scale(.97);filter:brightness(1.08)}
-.snake{background:linear-gradient(135deg,#18b85a,#087a57)}
-.pong{background:linear-gradient(135deg,#2f73ff,#6d36d8)}
-.reaction{background:linear-gradient(135deg,#ff8a22,#ea355f)}
-.tap{background:linear-gradient(135deg,#00a8c9,#1477e6)}
-.icon{font-size:58px}
-.name{font-size:26px;font-weight:800;margin-top:12px}
-.desc{margin-top:7px;color:rgba(255,255,255,.84)}
-.badge{
-  display:inline-block;margin-top:14px;padding:7px 10px;border-radius:999px;
-  background:rgba(255,255,255,.15);font-size:13px;font-weight:700
-}
-footer{text-align:center;color:#a7abc7;padding:12px 20px 34px}
-@media(max-width:650px){
-  .games{grid-template-columns:1fr}
-  header h1{font-size:36px}
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Charlie’s Arcade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: radial-gradient(circle at top, #222 0, #000 60%);
+      color: #fff;
+      font-family: 'Press Start 2P', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #080808;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #0ff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 14px;
+      color: #0ff;
+      text-shadow: 0 0 8px #0ff;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      font-size: 10px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #0ff;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -3px;
+      width: 0;
+      height: 2px;
+      background: #f0f;
+      transition: width 0.2s;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 15px 60px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px #0ff;
+    }
+
+    .hero p {
+      font-size: 10px;
+      color: #ccc;
+    }
+
+    /* GAME GRID */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .game-card {
+      background: #101010;
+      border: 2px solid #0ff;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .game-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+      border-color: #f0f;
+    }
+
+    .game-thumb {
+      width: 100%;
+      height: 120px;
+      background: repeating-linear-gradient(
+        45deg,
+        #222,
+        #222 10px,
+        #333 10px,
+        #333 20px
+      );
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #0ff;
+    }
+
+    .game-card h3 {
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .game-desc {
+      font-size: 9px;
+      color: #bbb;
+      margin-bottom: 10px;
+      min-height: 30px;
+    }
+
+    .play-btn {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 8px 12px;
+      background: linear-gradient(90deg, #0ff, #f0f);
+      color: #000;
+      border-radius: 5px;
+      font-size: 9px;
+      text-decoration: none;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+    }
+
+    .play-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* HIGH SCORES */
+    .scores-panel {
+      margin-top: 40px;
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid #f0f;
+      background: #120012;
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+    }
+
+    .scores-panel h2 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #f0f;
+    }
+
+    .scores-list {
+      font-size: 9px;
+      color: #ddd;
+      list-style: none;
+    }
+
+    .scores-list li {
+      margin-bottom: 4px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 8px;
+      color: #777;
+    }
+  </style>
 </head>
+
 <body>
-<header>
-  <h1>🎮 Charlie's Arcade</h1>
-  <p>Pick a game and beat your best score.</p>
-</header>
 
-<div class="games">
-  <a class="card snake" href="snake.html">
-    <div class="icon">🐍</div>
-    <div class="name">Snake</div>
-    <div class="desc">WASD, arrow keys, or touch buttons.</div>
-    <div class="badge">Classic</div>
-  </a>
+  <nav class="navbar">
+    <div class="logo">Charlie’s Arcade</div>
+    <ul class="nav-links">
+      <li><a href="#">Home</a></li>
+      <li><a href="#games">Games</a></li>
+      <li><a href="#scores">High Scores</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </nav>
 
-  <a class="card pong" href="pong.html">
-    <div class="icon">🏓</div>
-    <div class="name">Pong</div>
-    <div class="desc">Take on the CPU from Easy to Legend.</div>
-    <div class="badge">4 difficulties</div>
-  </a>
+  <div class="wrapper">
 
-  <a class="card reaction" href="reaction.html">
-    <div class="icon">⚡</div>
-    <div class="name">Reaction Time</div>
-    <div class="desc">Wait for green, then tap as fast as you can.</div>
-    <div class="badge">Speed test</div>
-  </a>
+    <section class="hero">
+      <h1>Welcome to Charlie’s Arcade</h1>
+      <p>Pick a game. Beat the score. Become a legend.</p>
+    </section>
 
-  <a class="card tap" href="tap.html">
-    <div class="icon">🎯</div>
-    <div class="name">Tap Rush</div>
-    <div class="desc">Hit the moving target and rack up points.</div>
-    <div class="badge">Arcade</div>
-  </a>
-<a class="card" href="breakout.html" style="background:linear-gradient(135deg,#bf3b21,#7b2056)"><div class="icon">💥</div><div class="name">Breakout</div><div class="desc">Smash every brick. Keep the ball in play.</div><div class="badge">New · Keyboard + touch</div></a>
-<a class="card" href="flappy.html" style="background:linear-gradient(135deg,#007e99,#1654ab)"><div class="icon">🐦</div><div class="name">Flappy Flight</div><div class="desc">Flap through the gaps and beat your score.</div><div class="badge">New · Keyboard + touch</div></a>
-<a class="card" href="traffic.html" style="background:linear-gradient(135deg,#956000,#a32d25)"><div class="icon">🏎️</div><div class="name">Traffic Dodger</div><div class="desc">Switch lanes and dodge oncoming traffic.</div><div class="badge">New · Keyboard + touch</div></a>
-<a class="card" href="space.html" style="background:linear-gradient(135deg,#6435bf,#211950)"><div class="icon">👾</div><div class="name">Space Shooter</div><div class="desc">Blast incoming enemies and dodge their shots.</div><div class="badge">New · Keyboard + touch</div></a></div>
+    <!-- GAME GRID -->
+    <section id="games">
+      <div class="game-grid">
 
-<footer>Charlie’s Arcade • Pick a game. Play anywhere.</footer>
+        <div class="game-card">
+          <div class="game-thumb">SNAKE</div>
+          <h3>Snake</h3>
+          <p class="game-desc">Classic snake. Don’t crash.</p>
+          <a href="snake.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">PONG</div>
+          <h3>Pong</h3>
+          <p class="game-desc">Retro paddle battle.</p>
+          <a href="pong.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">REACTION</div>
+          <h3>Reaction Test</h3>
+          <p class="game-desc">How fast are you really.</p>
+          <a href="reaction.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">BREAKOUT</div>
+          <h3>Breakout</h3>
+          <p class="game-desc">Destroy every brick.</p>
+          <a href="breakout.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">FLAPPY</div>
+          <h3>Flappy Flight</h3>
+          <p class="game-desc">Don’t hit the pipes.</p>
+          <a href="flappy.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">TRAFFIC</div>
+          <h3>Traffic Dodger</h3>
+          <p class="game-desc">Dodge cars. Stay alive.</p>
+          <a href="traffic.html" class="play-btn">Play</a>
+        </div>
+
+        <div class="game-card">
+          <div class="game-thumb">SPACE</div>
+          <h3>Space Shooter</h3>
+          <p class="game-desc">Blast enemies in space.</p>
+          <a href="space.html" class="play-btn">Play</a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- HIGH SCORES -->
+    <section id="scores" class="scores-panel">
+      <h2>High Scores</h2>
+      <ul class="scores-list">
+        <li>Snake: <span id="hs-snake">0</span></li>
+        <li>Pong: <span id="hs-pong">0</span></li>
+        <li>Reaction: <span id="hs-reaction">0</span></li>
+        <li>Breakout: <span id="hs-breakout">0</span></li>
+        <li>Flappy Flight: <span id="hs-flappy">0</span></li>
+        <li>Traffic Dodger: <span id="hs-traffic">0</span></li>
+        <li>Space Shooter: <span id="hs-space">0</span></li>
+      </ul>
+    </section>
+
+    <section id="about" class="footer">
+      Charlie’s Arcade — built by Charlie, upgraded forever.
+    </section>
+
+  </div>
+
+  <script>
+    function getHighScore(key) {
+      return localStorage.getItem("hs_" + key) || 0;
+    }
+
+    document.getElementById("hs-snake").innerText = getHighScore("snake");
+    document.getElementById("hs-pong").innerText = getHighScore("pong");
+    document.getElementById("hs-reaction").innerText = getHighScore("reaction");
+    document.getElementById("hs-breakout").innerText = getHighScore("breakout");
+    document.getElementById("hs-flappy").innerText = getHighScore("flappy");
+    document.getElementById("hs-traffic").innerText = getHighScore("traffic");
+    document.getElementById("hs-space").innerText = getHighScore("space");
+  </script>
+
 </body>
 </html>
