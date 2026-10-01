@@ -15,7 +15,7 @@
 <div class="hud"><div class="box"><span>SCORE</span><strong id="score">0</strong></div><div class="box"><span>SHOTS</span><strong id="shots">0 / 15</strong></div><div class="box"><span>STREAK</span><strong id="streak">0</strong></div><div class="box"><span>SPOT</span><strong id="spot">1 / 5</strong></div><div class="box"><span>BEST</span><strong id="best">0</strong></div></div>
 <div class="stage">
 <canvas id="game" width="760" height="720"></canvas>
-<div class="powerSide"><span class="label">SHOT POWER</span><div class="meter"><div class="goodZone"></div><div class="perfectZone"></div><div class="meterFill" id="powerFill"></div><div class="meterLine" id="meterLine"></div></div><strong id="releaseText">0%</strong></div>
+<div class="powerSide"><span class="label">SHOT POWER</span><div class="meter"><div class="goodZone" id="goodZone"></div><div class="perfectZone" id="perfectZone"></div><div class="meterFill" id="powerFill"></div><div class="meterLine" id="meterLine"></div></div><strong id="releaseText">0%</strong></div>
 <div class="overlay" id="overlay"><div class="panel"><h2 id="title">Basketball Shootout</h2><p id="message">Hold Space or SHOOT. Watch the <b>right-side shot meter</b> and release in green. The bright green stripe is perfect.</p><button class="primary" id="start">Start Shootout</button></div></div>
 </div>
 <div class="controls"><button id="left">◀ SPOT</button><button id="shoot">HOLD TO SHOOT</button><button id="right">SPOT ▶</button></div>
@@ -24,14 +24,21 @@
 const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),spots=[145,260,380,500,615];
 let mode='ready',score=0,shots=0,streak=0,spot=0,shotAtSpot=0,best=Number(localStorage.getItem('basket_best')||0),last=0;
-let meter=.04,meterDir=1,charging=false,ball=null,result='',resultTimer=0,perfectRelease=false;
+let meter=.04,meterDir=1,charging=false,ball=null,result='',resultTimer=0,perfectRelease=false,greenCenter=.77;
 function hud(){ $('score').textContent=score;$('shots').textContent=shots+' / 15';$('streak').textContent=streak;$('spot').textContent=(spot+1)+' / 5';$('best').textContent=best;const pct=Math.round(meter*100);$('powerFill').style.height=pct+'%';$('meterLine').style.top='calc('+pct+'% - 1px)';$('releaseText').textContent=pct+'%';}
-function resetShot(){meter=.04;meterDir=1;charging=false;ball=null;result='';resultTimer=0;perfectRelease=false;hud()}
+function randomizeGreen(){
+ greenCenter=.24+Math.random()*.62;
+ const goodTop=(greenCenter-.07)*100;
+ const perfectTop=(greenCenter-.02)*100;
+ $('goodZone').style.top=goodTop+'%';
+ $('perfectZone').style.top=perfectTop+'%';
+}
+function resetShot(){meter=.04;meterDir=1;charging=false;ball=null;result='';resultTimer=0;perfectRelease=false;randomizeGreen();hud()}
 function start(){mode='play';score=0;shots=0;streak=0;spot=0;shotAtSpot=0;resetShot();$('overlay').hidden=true;last=performance.now()}
 function finish(){mode='over';if(score>best){best=score;localStorage.setItem('basket_best',String(best))}hud();$('title').textContent='Shootout Complete';$('message').textContent='Score: '+score+' · Best: '+best+'.';$('start').textContent='Play Again';$('overlay').hidden=false}
 function changeSpot(dir){if(mode!=='play'||charging||ball||result)return;spot=clamp(spot+dir,0,4);shotAtSpot=0;hud()}
 function beginCharge(){if(mode==='play'&&!ball&&!result)charging=true}
-function releaseShot(){if(mode!=='play'||!charging||ball||result)return;charging=false;shots++;shotAtSpot++;const error=Math.abs(meter-.77);perfectRelease=error<=.02;const made=perfectRelease||error<=.07||(error<=.12&&Math.random()<.72);const px=spots[spot],missSide=meter<.77?-1:1,tx=made?380:380+missSide*(38+Math.min(42,error*260));ball={sx:px,sy:606,x:px,y:606,tx,ty:184,t:0,made};hud()}
+function releaseShot(){if(mode!=='play'||!charging||ball||result)return;charging=false;shots++;shotAtSpot++;const error=Math.abs(meter-greenCenter);perfectRelease=error<=.02;const made=perfectRelease||error<=.07||(error<=.12&&Math.random()<.72);const px=spots[spot],missSide=meter<greenCenter?-1:1,tx=made?380:380+missSide*(38+Math.min(42,error*260));ball={sx:px,sy:606,x:px,y:606,tx,ty:184,t:0,made};hud()}
 function update(dt){if(mode!=='play')return;if(charging){meter+=meterDir*dt*1.25;if(meter>=1){meter=1;meterDir=-1}if(meter<=.03){meter=.03;meterDir=1}hud()}if(ball){ball.t+=dt*1.55;const t=clamp(ball.t,0,1);ball.x=ball.sx+(ball.tx-ball.sx)*t;ball.y=ball.sy+(ball.ty-ball.sy)*t-255*Math.sin(Math.PI*t);if(t>=1){if(ball.made){streak++;score+=2+(streak>=3?1:0);result=perfectRelease?'GREEN!':'BUCKET!'}else{streak=0;result='MISS'}ball=null;resultTimer=.8;if(shotAtSpot>=3&&shots<15){spot=Math.min(4,spot+1);shotAtSpot=0}hud()}}if(result){resultTimer-=dt;if(resultTimer<=0){if(shots>=15)finish();else resetShot()}}}
 function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
 function draw(){ctx.fillStyle='#cc8b4a';ctx.fillRect(0,0,W,H);ctx.fillStyle='#ba783d';ctx.fillRect(0,500,W,220);ctx.strokeStyle='#efd1ad';ctx.lineWidth=4;ctx.beginPath();ctx.arc(380,505,155,Math.PI,0);ctx.stroke();ctx.fillStyle='#f2f2f2';ctx.fillRect(316,100,128,82);ctx.strokeStyle='#df3f2d';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(338,184);ctx.lineTo(422,184);ctx.stroke();ctx.strokeStyle='#e8e8e8';ctx.lineWidth=2;for(let x=342;x<=418;x+=12){ctx.beginPath();ctx.moveTo(x,188);ctx.lineTo(380+(x-380)*.5,236);ctx.stroke()}spots.forEach((x,i)=>{ctx.fillStyle=i===spot?'#fff':'#e8c7a4';ctx.beginPath();ctx.arc(x,620,10,0,Math.PI*2);ctx.fill()});const px=spots[spot];circle(px,555,16,'#172235');ctx.fillStyle='#24569a';ctx.beginPath();ctx.roundRect(px-22,570,44,52,8);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.fillText('YOU',px,601);ctx.textAlign='left';if(ball){circle(ball.x,ball.y,13,'#f27a26');ctx.strokeStyle='#6f3819';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ball.x,ball.y,13,0,Math.PI*2);ctx.stroke()}if(result){ctx.fillStyle='rgba(16,9,22,.55)';ctx.fillRect(0,0,W,H);ctx.fillStyle=result==='GREEN!'?'#55ee8a':result==='MISS'?'#ff7180':'#fff';ctx.font='900 62px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2);ctx.textAlign='left'}}
