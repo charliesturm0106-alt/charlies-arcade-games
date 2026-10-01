@@ -3,783 +3,651 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b14">
+<meta name="theme-color" content="#0a0d15">
 <title>Idle Empire · Charlie's Arcade</title>
 <style>
 :root{
-  --bg:#080b14;--panel:#101625;--panel2:#151d30;--line:#26324a;--text:#f5f8ff;
-  --muted:#8593ab;--cyan:#42d8ff;--green:#58e49a;--purple:#9b7cff;--gold:#ffd56a;
-  --danger:#ff6f7f;--shadow:0 20px 60px #0008
+ --bg:#090c13;--panel:#111722;--panel2:#161e2c;--line:#283346;--text:#f7f9fc;
+ --muted:#8e9aad;--green:#45df91;--blue:#52b8ff;--gold:#ffc857;--purple:#9a7cff;--red:#ff6c7c;
 }
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:
-radial-gradient(circle at 10% 0,#17214a 0,transparent 30%),
-radial-gradient(circle at 90% 10%,#103c42 0,transparent 25%),var(--bg);
-color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}
-.shell{max-width:1180px;margin:auto;padding:0 16px 80px}
-.top{position:sticky;top:0;z-index:30;margin:0 -16px;padding:10px 16px;background:#080b14e8;backdrop-filter:blur(18px);border-bottom:1px solid #ffffff0d}
-.topin{max-width:1180px;margin:auto;display:flex;align-items:center;gap:12px}
-.back{color:#a7b2c8;text-decoration:none;font-weight:850;font-size:13px;white-space:nowrap}
-.logo{display:flex;align-items:center;gap:9px;font-weight:950;letter-spacing:-.4px}
-.logoMark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cyan),var(--purple));box-shadow:0 8px 25px #42d8ff33}
-.moneyWrap{margin-left:auto;text-align:right}.money{font-size:clamp(18px,4vw,25px);font-weight:950;color:#fff}.rate{color:var(--green);font-size:11px;font-weight:850}
-.tokens{padding:8px 10px;border:1px solid #755bc766;background:#9b7cff12;border-radius:12px;font-weight:900;color:#cbbdff;font-size:12px}
-.hero{padding:24px 0 14px;display:grid;grid-template-columns:1.08fr .92fr;gap:15px}
-.city{min-height:305px;position:relative;overflow:hidden;border:1px solid #2a3854;border-radius:24px;background:
-linear-gradient(#111a36 0 56%,#172238 56% 58%,#101825 58%);box-shadow:var(--shadow)}
-.city:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 75% 15%,#63d8ff22,transparent 25%),linear-gradient(180deg,transparent 60%,#0004)}
-.skyline{position:absolute;inset:55px 15px 34px;display:flex;align-items:end;justify-content:center;gap:7px}
-.building{width:10%;min-width:32px;max-width:72px;height:var(--h);position:relative;border:1px solid #ffffff12;border-bottom:0;border-radius:8px 8px 0 0;background:linear-gradient(145deg,#263857,#16243d);box-shadow:0 0 28px #42d8ff0d;transition:.4s transform,.4s filter}
-.building.unlocked{background:linear-gradient(145deg,#2b5172,#153653);box-shadow:0 0 32px #42d8ff24}.building.hot{filter:brightness(1.25);transform:translateY(-3px)}
-.windows{position:absolute;inset:10px 7px;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:8px;gap:7px}
-.windows i{display:block;border-radius:2px;background:#25364e}.unlocked .windows i:nth-child(3n+1),.unlocked .windows i:nth-child(4n+2){background:#ffd56a;box-shadow:0 0 8px #ffd56a66}
-.road{position:absolute;left:0;right:0;bottom:0;height:35px;background:#0a0f19}.road:after{content:"";position:absolute;left:0;right:0;top:16px;border-top:2px dashed #4c5769}
-.car{position:absolute;bottom:11px;left:-40px;font-size:21px;animation:drive 9s linear infinite}.car.two{animation-duration:13s;animation-delay:-6s;font-size:18px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,#1c2f4e 0,transparent 34%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.42}
+a{color:inherit}
+.app{max-width:1080px;margin:auto;padding:0 14px 80px}
+.topbar{position:sticky;top:0;z-index:40;margin:0 -14px;background:#090c13ed;border-bottom:1px solid #ffffff0d;backdrop-filter:blur(16px);padding:9px 14px}
+.topin{max-width:1080px;margin:auto;display:flex;align-items:center;gap:12px}
+.back{text-decoration:none;color:#a7b1c1;font-size:13px;font-weight:850}
+.brand{display:flex;align-items:center;gap:8px;font-weight:950;letter-spacing:-.4px}
+.brandIcon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#3479ff,#38dc9c);box-shadow:0 8px 30px #2c8fff2a}
+.wallet{margin-left:auto;text-align:right;line-height:1.05}
+.cash{font-size:clamp(20px,4vw,28px);font-weight:950;letter-spacing:-.6px}
+.ips{font-size:11px;font-weight:850;color:var(--green);margin-top:5px}
+.tokenPill{font-size:11px;font-weight:900;color:#d6caff;border:1px solid #6959a4;background:#201a35;padding:8px 10px;border-radius:11px}
+
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;padding:16px 0 12px}
+.city{position:relative;min-height:225px;overflow:hidden;border:1px solid #2b3850;border-radius:22px;background:linear-gradient(180deg,#121b32 0 61%,#172031 61% 63%,#0b111b 63%);box-shadow:0 18px 50px #0006}
+.city:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 15%,#6bd7ff1f,transparent 25%)}
+.cityTitle{position:absolute;z-index:3;left:16px;top:15px}
+.cityTitle strong{display:block;font-size:17px}.cityTitle span{display:block;color:#8190a7;font-size:11px;margin-top:3px}
+.skyline{position:absolute;left:15px;right:15px;bottom:29px;top:59px;display:flex;align-items:end;justify-content:center;gap:6px}
+.tower{height:var(--h);width:10.5%;min-width:27px;max-width:68px;border:1px solid #ffffff12;border-bottom:0;border-radius:7px 7px 0 0;background:#1c293d;position:relative;transition:.25s}
+.tower.on{background:linear-gradient(150deg,#28556f,#17354e);box-shadow:0 0 25px #4dd7ff1b}
+.tower.hot{filter:brightness(1.35);transform:translateY(-4px)}
+.tower:after{content:"";position:absolute;inset:9px 6px;background:repeating-linear-gradient(0deg,transparent 0 9px,#ffd46022 9px 14px),repeating-linear-gradient(90deg,transparent 0 10px,#ffd46022 10px 14px)}
+.tower.on:after{background:repeating-linear-gradient(0deg,transparent 0 9px,#ffd46055 9px 14px),repeating-linear-gradient(90deg,transparent 0 10px,#55dcff25 10px 14px)}
+.road{position:absolute;left:0;right:0;bottom:0;height:30px;background:#070b11;border-top:1px solid #263142}
+.road:after{content:"";position:absolute;left:0;right:0;top:14px;border-top:2px dashed #586071}
+.car{position:absolute;left:-50px;bottom:7px;font-size:20px;animation:drive 10s linear infinite}.car.b{animation-duration:14s;animation-delay:-7s}
 @keyframes drive{to{left:110%}}
-.cityLabel{position:absolute;top:16px;left:17px;z-index:2}.cityLabel strong{font-size:16px}.cityLabel span{display:block;color:#8190a8;font-size:11px;margin-top:3px}
-.eventBtn{position:absolute;z-index:5;right:16px;top:16px;border:1px solid #ffd56a88;background:linear-gradient(135deg,#4a3614,#241f17);color:#fff6cf;border-radius:14px;padding:11px 13px;font-weight:900;box-shadow:0 8px 28px #0006;animation:pulse 1.7s ease-in-out infinite}
-.eventBtn[hidden]{display:none}@keyframes pulse{50%{transform:translateY(-2px);box-shadow:0 0 28px #ffd56a33}}
-.boostPill{position:absolute;left:17px;bottom:46px;padding:8px 10px;border-radius:999px;background:#0b111ddd;border:1px solid #34435b;color:#b9c6d8;font-size:11px;font-weight:850}
-.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.stat{min-height:88px;border:1px solid var(--line);background:linear-gradient(160deg,#151d2f,#0e1420);border-radius:18px;padding:14px}
-.stat span{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.7px}.stat strong{display:block;font-size:21px;margin-top:7px}.stat small{display:block;color:#77869d;font-size:10px;margin-top:3px}
-.goal{grid-column:1/-1;min-height:108px}.goalTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.goal strong{font-size:15px;margin:0}.goal .goalText{color:#a9b6c8;font-size:12px;line-height:1.45;margin-top:9px}
-.progress{height:8px;background:#0a0f18;border-radius:999px;overflow:hidden;margin-top:10px;border:1px solid #253149}.progress>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:inherit;transition:.25s}
-.navTabs{position:sticky;top:55px;z-index:22;display:flex;gap:7px;overflow:auto;padding:10px 0 11px;background:linear-gradient(var(--bg) 70%,transparent)}
-.navTabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;border:1px solid var(--line);background:#111827;color:#93a0b5;padding:10px 13px;border-radius:12px;font-weight:850;font-size:12px}.tab.active{color:#fff;border-color:#4e70a0;background:#1a2940;box-shadow:inset 0 0 0 1px #42d8ff18}
-.tabPane{display:none}.tabPane.active{display:block}
-.sectionTitle{display:flex;align-items:end;justify-content:space-between;margin:8px 0 12px}.sectionTitle h2{font-size:20px;margin:0}.sectionTitle p{margin:0;color:var(--muted);font-size:11px}
-.buyModes{display:flex;gap:5px}.buyModes button{border:1px solid var(--line);background:#101827;color:#8696ad;padding:8px 10px;border-radius:9px;font-size:11px;font-weight:900}.buyModes button.active{color:#fff;background:#22364f;border-color:#50759e}
-.businessList{display:grid;gap:10px}.biz{position:relative;display:grid;grid-template-columns:55px 1fr auto;gap:12px;align-items:center;background:linear-gradient(160deg,#151d2e,#0e1420);border:1px solid var(--line);border-radius:18px;padding:13px;overflow:hidden}
-.biz.locked{opacity:.64}.bizIcon{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:27px;background:#ffffff09;border:1px solid #ffffff0d}.bizTitle{display:flex;align-items:center;gap:8px}.bizTitle strong{font-size:14px}.level{font-size:10px;color:#b7c4d5;background:#ffffff0a;border:1px solid #ffffff12;border-radius:999px;padding:4px 6px}.bizMeta{color:#8391a6;font-size:11px;margin-top:5px}.milestone{color:#e8d27b;font-size:10px;font-weight:800;margin-top:4px}
-.bizProgress{height:6px;background:#080d15;border-radius:999px;overflow:hidden;margin-top:8px;border:1px solid #202c40}.bizProgress i{height:100%;display:block;width:0;background:linear-gradient(90deg,#42d8ff,#58e49a);transition:width .1s linear}
-.bizActions{display:flex;flex-direction:column;gap:6px;min-width:122px}.buyBtn,.runBtn{border:0;border-radius:11px;padding:10px 9px;color:#fff;font-weight:900;font-size:11px}.buyBtn{background:linear-gradient(90deg,#256e8a,#3265a8)}.runBtn{background:linear-gradient(90deg,#23895a,#3bbd78)}.runBtn.auto{background:#172536;color:#79e8ad;border:1px solid #2f6d54}.buyBtn.can{box-shadow:0 0 0 1px #5bbbd955,0 0 18px #42d8ff12}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{border:1px solid var(--line);background:linear-gradient(160deg,#151d2e,#0e1420);border-radius:18px;padding:15px;position:relative;overflow:hidden}.card.bought{border-color:#2f6e55;background:linear-gradient(160deg,#153128,#0d1d18)}.card.locked{opacity:.5}.cardIcon{font-size:27px;margin-bottom:10px}.card h3{font-size:14px;margin:0 0 5px}.card p{font-size:11px;color:#8998ae;line-height:1.45;margin:0 0 13px;min-height:32px}.cost{color:#dce6f5;font-size:12px;font-weight:900}.card button{width:100%;margin-top:10px;border:0;border-radius:11px;padding:10px;color:#fff;font-weight:900;background:linear-gradient(90deg,#6650c7,#8f69ed)}.card button.managerBuy{background:linear-gradient(90deg,#25775b,#39ac76)}
-.prestigeBox{border:1px solid #6c57ac;background:radial-gradient(circle at top right,#5a3ba42b,transparent 36%),#131629;border-radius:22px;padding:20px}.prestigeBox h2{margin:0 0 7px}.prestigeGain{font-size:35px;color:#b7a0ff;font-weight:950}.prestigeBox p{color:#9da6b9;font-size:12px;line-height:1.55}.prestigeBtn{border:0;border-radius:13px;padding:13px 17px;background:linear-gradient(90deg,#7b5ce2,#a57cf5);color:white;font-weight:950}.tree{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:13px}.node{border:1px solid #3a315b;background:#15152a;border-radius:16px;padding:14px}.node.owned{border-color:#725fbd;background:#1d1839}.node strong{font-size:13px}.node p{color:#8f91aa;font-size:10px;line-height:1.45;min-height:29px}.node button{width:100%;border:0;border-radius:10px;padding:9px;background:#56439f;color:white;font-weight:900}
-.achGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.ach{border:1px solid var(--line);background:#101725;border-radius:15px;padding:13px;min-height:116px}.ach.unlocked{border-color:#786327;background:linear-gradient(160deg,#292414,#151407)}.ach .medal{font-size:24px}.ach strong{display:block;font-size:12px;margin-top:8px}.ach span{display:block;color:#7f8ca1;font-size:10px;line-height:1.35;margin-top:4px}.ach.unlocked span{color:#c7b873}
-.statsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.statLong{border:1px solid var(--line);background:#111827;border-radius:15px;padding:14px}.statLong span{color:#8090a8;font-size:10px;font-weight:850}.statLong strong{display:block;margin-top:5px;font-size:17px}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.tools button{border:1px solid var(--line);background:#141c2a;color:#dbe4f1;padding:10px 12px;border-radius:11px;font-weight:850;font-size:11px}.tools .danger{border-color:#713744;color:#ff9ca7}
-.toast{position:fixed;left:50%;bottom:25px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#111927e8;border:1px solid #3a4a63;color:#fff;border-radius:13px;padding:11px 15px;font-size:12px;font-weight:850;box-shadow:var(--shadow);transition:.25s}.toast.show{opacity:1;transform:translate(-50%,0)}
-.modal{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:#050811d9;padding:18px}.modal[hidden]{display:none}.modalBox{width:min(100%,440px);border:1px solid #34445f;background:#111827;border-radius:21px;padding:21px;box-shadow:var(--shadow)}.modalBox h2{margin:0 0 7px}.modalBox p{color:#92a0b5;line-height:1.55;font-size:12px}.modalValue{font-size:30px;font-weight:950;color:#62e7a2;margin:12px 0}.modalBox button{width:100%;border:0;border-radius:12px;padding:12px;background:linear-gradient(90deg,#25865b,#47c381);color:#fff;font-weight:950}
-@media(max-width:860px){.hero{grid-template-columns:1fr}.city{min-height:265px}.cards{grid-template-columns:1fr 1fr}}
-@media(max-width:620px){
- .shell{padding:0 11px 70px}.top{margin:0 -11px;padding:9px 11px}.logo span{display:none}.tokens{display:none}
- .hero{padding-top:15px}.city{min-height:240px}.skyline{inset:58px 8px 34px;gap:4px}.building{min-width:25px}
- .summary{grid-template-columns:repeat(2,1fr)}.stat{min-height:76px}.stat strong{font-size:17px}
- .navTabs{top:53px}.businessList{gap:8px}.biz{grid-template-columns:45px 1fr;padding:11px;gap:10px}.bizIcon{width:44px;height:44px;font-size:23px}.bizActions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;min-width:0}.cards{grid-template-columns:1fr}.tree{grid-template-columns:1fr}.achGrid{grid-template-columns:repeat(2,1fr)}.statsGrid{grid-template-columns:repeat(2,1fr)}
+.event{position:absolute;right:14px;top:14px;z-index:5;border:1px solid #9d7a31;background:#30230f;color:#ffe7a4;border-radius:12px;padding:10px 12px;font-weight:950;font-size:11px;box-shadow:0 0 24px #ffc8572a;animation:breathe 1.5s ease-in-out infinite}
+.event[hidden]{display:none}
+@keyframes breathe{50%{transform:translateY(-2px);filter:brightness(1.15)}}
+.boost{position:absolute;z-index:4;left:15px;bottom:39px;border:1px solid #344055;background:#0b111bd9;color:#aeb9ca;border-radius:999px;padding:7px 9px;font-size:10px;font-weight:850}
+
+.dash{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.metric{border:1px solid var(--line);background:linear-gradient(150deg,#151d29,#0f141d);border-radius:17px;padding:13px;min-height:87px}
+.metric span{color:#8794a8;font-size:9px;font-weight:950;letter-spacing:.7px}.metric strong{display:block;font-size:20px;margin-top:7px}.metric small{display:block;color:#738197;font-size:10px;margin-top:3px}
+.goal{grid-column:1/-1;min-height:103px}.goalHead{display:flex;justify-content:space-between;gap:10px}.goalHead strong{font-size:13px}.goalCopy{color:#8f9bae;font-size:11px;line-height:1.45;margin-top:7px}.bar{height:7px;background:#090d14;border:1px solid #232e40;border-radius:999px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#45df91,#52b8ff);border-radius:inherit}
+
+.tabs{position:sticky;top:53px;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:8px 0 10px;background:linear-gradient(#090c13 75%,transparent)}
+.tab{border:1px solid var(--line);background:#101620;color:#8794a7;border-radius:11px;padding:10px 6px;font-size:11px;font-weight:900}
+.tab.active{background:#1c2b3f;border-color:#496688;color:#fff}
+.pane{display:none}.pane.active{display:block}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0 11px}
+.sectionHead h2{margin:0;font-size:19px}.sectionHead p{margin:3px 0 0;color:#7e8b9f;font-size:10px}
+.buyModes{display:flex;gap:5px}.buyModes button{border:1px solid #2c394c;background:#111923;color:#8492a7;border-radius:9px;padding:7px 10px;font-size:10px;font-weight:950}.buyModes button.active{background:#25415c;color:white;border-color:#527aa0}
+
+.businesses{display:grid;gap:9px}
+.biz{border:1px solid var(--line);background:linear-gradient(150deg,#151c28,#0e131c);border-radius:18px;padding:12px;display:grid;grid-template-columns:48px 1fr 130px;gap:11px;align-items:center;position:relative;overflow:hidden}
+.biz.locked{opacity:.62}.bizIcon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:25px;background:#ffffff09;border:1px solid #ffffff0d}
+.bizTop{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.bizName{font-size:14px;font-weight:950}.owned{font-size:9px;font-weight:950;color:#b8c3d3;background:#ffffff0b;border:1px solid #ffffff12;border-radius:999px;padding:4px 6px}
+.bizInfo{font-size:10px;color:#8996aa;margin-top:5px}.milestone{font-size:9px;color:#d9bc63;margin-top:4px;font-weight:850}
+.progress{height:8px;border-radius:999px;background:#080c12;border:1px solid #202b3b;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#47d891,#45b8ff);transition:width .08s linear}
+.actions{display:grid;gap:6px}.buy,.run{border:0;border-radius:11px;padding:10px 8px;font-size:10px;font-weight:950;color:white}.buy{background:linear-gradient(90deg,#2d6f9d,#365ec5)}.run{background:linear-gradient(90deg,#238458,#38b875)}.run.auto{background:#182a24;border:1px solid #2e7053;color:#6de8a6}.run.wait{background:#18212d;color:#8291a7}
+.canBuy{box-shadow:0 0 0 1px #58c8ff45,0 0 20px #58c8ff0f}
+.incomePop{position:absolute;pointer-events:none;color:#67e9a6;font-weight:950;font-size:13px;right:145px;top:50%;animation:pop .75s ease-out forwards}
+@keyframes pop{to{transform:translateY(-35px);opacity:0}}
+
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.card{border:1px solid var(--line);background:linear-gradient(150deg,#151c28,#0e131c);border-radius:17px;padding:14px}.card.locked{opacity:.5}.card.ownedCard{border-color:#306e52;background:linear-gradient(150deg,#153025,#0d1b15)}
+.cardIcon{font-size:25px}.card h3{font-size:13px;margin:8px 0 4px}.card p{font-size:10px;color:#8491a4;line-height:1.45;margin:0 0 10px;min-height:29px}.price{font-size:11px;font-weight:950;color:#e7ecf4}.card button{width:100%;border:0;border-radius:10px;margin-top:9px;padding:9px;color:white;font-weight:950;font-size:10px;background:linear-gradient(90deg,#6e55cf,#9674ed)}.card .hire{background:linear-gradient(90deg,#247a55,#38b97c)}
+
+.prestige{border:1px solid #594f87;background:radial-gradient(circle at top right,#7257cc2b,transparent 32%),#131523;border-radius:20px;padding:18px}.prestige h2{margin:0 0 5px;font-size:19px}.gain{font-size:31px;font-weight:950;color:#bba8ff;margin:9px 0 4px}.prestige p{font-size:11px;color:#9099aa;line-height:1.5}.prestige button{border:0;border-radius:11px;padding:11px 14px;background:linear-gradient(90deg,#765ae0,#a47cf1);color:white;font-weight:950}
+.legacyGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.legacy{border:1px solid #35304d;background:#121522;border-radius:14px;padding:12px}.legacy.on{border-color:#6653a4;background:#1a1730}.legacy strong{font-size:12px}.legacy p{font-size:9px;color:#858ca0;min-height:27px;line-height:1.4}.legacy button{width:100%;border:0;border-radius:9px;padding:8px;background:#58429e;color:#fff;font-size:9px;font-weight:950}
+.achievementWrap{margin-top:15px}.achievementWrap h3{font-size:14px;margin:0 0 8px}.achievements{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.ach{border:1px solid var(--line);background:#101620;border-radius:13px;padding:10px;min-height:90px}.ach.done{border-color:#6d5d2e;background:#211d10}.ach b{font-size:11px;display:block;margin-top:5px}.ach span{font-size:9px;color:#7f8b9e;display:block;line-height:1.35;margin-top:3px}.ach.done span{color:#c2ad6b}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:15px}.stat{border:1px solid var(--line);background:#101620;border-radius:13px;padding:11px}.stat span{font-size:9px;color:#8290a5;font-weight:900}.stat b{display:block;font-size:14px;margin-top:4px}
+.tools{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.tools button{border:1px solid var(--line);background:#141b27;color:#cbd4e1;border-radius:9px;padding:8px 10px;font-size:9px;font-weight:900}.tools .danger{border-color:#67343d;color:#ff98a4}
+
+.toast{position:fixed;z-index:80;left:50%;bottom:22px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:#121927f2;border:1px solid #3a485f;border-radius:12px;padding:10px 13px;font-size:11px;font-weight:900;box-shadow:0 15px 45px #0008;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;z-index:70;background:#05070ddc;display:grid;place-items:center;padding:16px}.modal[hidden]{display:none}.modalBox{width:min(100%,410px);background:#121925;border:1px solid #344159;border-radius:18px;padding:18px;box-shadow:0 22px 70px #000a}.modalBox h2{margin:0 0 6px}.modalBox p{color:#8d9aaf;font-size:11px;line-height:1.5}.offlineCash{font-size:30px;color:#56e39a;font-weight:950;margin:12px 0}.modalBox button{width:100%;border:0;border-radius:11px;padding:11px;background:linear-gradient(90deg,#26875b,#43c581);color:#fff;font-weight:950}
+
+@media(max-width:780px){.hero{grid-template-columns:1fr}.city{min-height:210px}.cards{grid-template-columns:1fr 1fr}}
+@media(max-width:580px){
+ .app{padding:0 9px 70px}.topbar{margin:0 -9px;padding:8px 9px}.brand span{display:none}.tokenPill{display:none}
+ .hero{padding-top:10px}.city{min-height:190px}.skyline{left:7px;right:7px;gap:3px}.tower{min-width:20px}
+ .metric{min-height:75px;padding:11px}.metric strong{font-size:17px}.tabs{top:51px}
+ .sectionHead{align-items:flex-end}.biz{grid-template-columns:43px 1fr;padding:10px;gap:9px}.bizIcon{width:43px;height:43px;font-size:23px}.actions{grid-column:1/-1;grid-template-columns:1fr 1fr}.incomePop{right:20px;top:45%}
+ .cards{grid-template-columns:1fr}.legacyGrid{grid-template-columns:1fr}.achievements{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}
 }
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="shell">
-<header class="top">
-  <div class="topin">
-    <a class="back" href="index.html">← Arcade</a>
-    <div class="logo"><div class="logoMark">💼</div><span>Idle Empire</span></div>
-    <div class="moneyWrap"><div class="money" id="cash">$50</div><div class="rate" id="ips">+$0/sec</div></div>
-    <div class="tokens" id="tokenTop">◆ 0</div>
-  </div>
-</header>
+<div class="app">
+<header class="topbar"><div class="topin">
+ <a href="index.html" class="back">← Arcade</a>
+ <div class="brand"><div class="brandIcon">💼</div><span>Idle Empire</span></div>
+ <div class="wallet"><div class="cash" id="cash">$100</div><div class="ips" id="ips">+$0/sec</div></div>
+ <div class="tokenPill" id="tokenTop">◆ 0</div>
+</div></header>
 
 <section class="hero">
-  <div class="city">
-    <div class="cityLabel"><strong id="cityName">Tiny Startup</strong><span id="citySub">Build something huge.</span></div>
-    <button class="eventBtn" id="eventBtn" hidden>💼 OPPORTUNITY!</button>
-    <div class="boostPill" id="boostPill">No active boost</div>
-    <div class="skyline" id="skyline">
-      <div class="building" data-b="0" style="--h:28%"><div class="windows"></div></div>
-      <div class="building" data-b="1" style="--h:37%"><div class="windows"></div></div>
-      <div class="building" data-b="2" style="--h:45%"><div class="windows"></div></div>
-      <div class="building" data-b="3" style="--h:54%"><div class="windows"></div></div>
-      <div class="building" data-b="4" style="--h:64%"><div class="windows"></div></div>
-      <div class="building" data-b="5" style="--h:74%"><div class="windows"></div></div>
-      <div class="building" data-b="6" style="--h:86%"><div class="windows"></div></div>
-      <div class="building" data-b="7" style="--h:100%"><div class="windows"></div></div>
-    </div>
-    <div class="road"><span class="car">🚗</span><span class="car two">🚙</span></div>
-  </div>
-
-  <div class="summary">
-    <div class="stat"><span>LIFETIME CASH</span><strong id="lifeCash">$0</strong><small>all empires</small></div>
-    <div class="stat"><span>EMPIRE TOKENS</span><strong id="tokens">0</strong><small id="tokenBonus">+0% permanent income</small></div>
-    <div class="stat"><span>BUSINESSES</span><strong id="ownedTotal">0</strong><small>units owned</small></div>
-    <div class="stat"><span>ACHIEVEMENTS</span><strong id="achCount">0 / 18</strong><small>+1% income each</small></div>
-    <div class="stat goal">
-      <div class="goalTop"><strong id="goalTitle">First goal: hire a manager</strong><span id="goalPct">0%</span></div>
-      <div class="goalText" id="goalText">Managers automate businesses so they keep earning without you.</div>
-      <div class="progress"><i id="goalBar"></i></div>
-    </div>
-  </div>
+ <div class="city">
+   <div class="cityTitle"><strong id="cityName">Corner Hustle</strong><span id="citySub">Start small. Own the skyline.</span></div>
+   <button class="event" id="eventBtn" hidden>⚡ OPPORTUNITY</button>
+   <div class="boost" id="boost">No active boost</div>
+   <div class="skyline">
+    <div class="tower" style="--h:22%"></div><div class="tower" style="--h:31%"></div>
+    <div class="tower" style="--h:42%"></div><div class="tower" style="--h:53%"></div>
+    <div class="tower" style="--h:65%"></div><div class="tower" style="--h:76%"></div>
+    <div class="tower" style="--h:88%"></div><div class="tower" style="--h:100%"></div>
+   </div>
+   <div class="road"><span class="car">🚗</span><span class="car b">🚕</span></div>
+ </div>
+ <div class="dash">
+   <div class="metric"><span>RUN EARNINGS</span><strong id="runCash">$0</strong><small>resets on prestige</small></div>
+   <div class="metric"><span>BUSINESS UNITS</span><strong id="units">0</strong><small>across 8 businesses</small></div>
+   <div class="metric"><span>MANAGERS</span><strong id="managerCount">0 / 8</strong><small>automate income</small></div>
+   <div class="metric"><span>ACHIEVEMENTS</span><strong id="achievementCount">0 / 18</strong><small>+1% income each</small></div>
+   <div class="metric goal">
+     <div class="goalHead"><strong id="goalTitle">Get your first manager</strong><span id="goalPct">0%</span></div>
+     <div class="goalCopy" id="goalCopy">Buy Lemonade Stands, run them, then hire a manager to automate the cycle.</div>
+     <div class="bar"><i id="goalBar"></i></div>
+   </div>
+ </div>
 </section>
 
-<nav class="navTabs">
-  <button class="tab active" data-tab="businesses">Businesses</button>
-  <button class="tab" data-tab="upgrades">Upgrades</button>
-  <button class="tab" data-tab="managers">Managers</button>
-  <button class="tab" data-tab="prestige">Prestige</button>
-  <button class="tab" data-tab="achievements">Achievements</button>
-  <button class="tab" data-tab="stats">Stats</button>
+<nav class="tabs">
+ <button class="tab active" data-tab="empire">Empire</button>
+ <button class="tab" data-tab="upgrades">Upgrades</button>
+ <button class="tab" data-tab="managers">Managers</button>
+ <button class="tab" data-tab="legacy">Legacy</button>
 </nav>
 
-<section class="tabPane active" id="businesses">
-  <div class="sectionTitle">
-    <div><h2>Your businesses</h2><p>Buy more, hit milestones, then automate them.</p></div>
-    <div class="buyModes"><button data-buy="1" class="active">1</button><button data-buy="10">10</button><button data-buy="max">MAX</button></div>
-  </div>
-  <div class="businessList" id="businessList"></div>
+<section class="pane active" id="empire">
+ <div class="sectionHead">
+   <div><h2>Your Empire</h2><p>Buy businesses. Tap RUN until you hire managers.</p></div>
+   <div class="buyModes"><button class="active" data-buy="1">1</button><button data-buy="10">10</button><button data-buy="max">MAX</button></div>
+ </div>
+ <div class="businesses" id="businesses"></div>
 </section>
 
-<section class="tabPane" id="upgrades">
-  <div class="sectionTitle"><div><h2>Upgrades</h2><p>Big multipliers, not tiny +2% filler.</p></div></div>
-  <div class="cards" id="upgradeList"></div>
+<section class="pane" id="upgrades">
+ <div class="sectionHead"><div><h2>Upgrades</h2><p>Milestones unlock major multipliers.</p></div></div>
+ <div class="cards" id="upgradeCards"></div>
 </section>
 
-<section class="tabPane" id="managers">
-  <div class="sectionTitle"><div><h2>Managers</h2><p>Hire them once per empire to automate a business.</p></div></div>
-  <div class="cards" id="managerList"></div>
+<section class="pane" id="managers">
+ <div class="sectionHead"><div><h2>Managers</h2><p>One purchase automates that business for the current empire.</p></div></div>
+ <div class="cards" id="managerCards"></div>
 </section>
 
-<section class="tabPane" id="prestige">
-  <div class="prestigeBox">
-    <h2>◆ Sell the Empire</h2>
-    <div class="prestigeGain" id="prestigeGain">+0 Tokens</div>
-    <p id="prestigeDesc">Grow your lifetime earnings to unlock Empire Tokens. Selling resets cash, businesses, managers, and normal upgrades, but keeps achievements, lifetime stats, prestige upgrades, and permanent token power.</p>
-    <button class="prestigeBtn" id="prestigeBtn" disabled>Need more progress</button>
-  </div>
-  <div class="sectionTitle"><div><h2>Legacy upgrades</h2><p>Permanent improvements that survive every reset.</p></div></div>
-  <div class="tree" id="prestigeTree"></div>
-</section>
-
-<section class="tabPane" id="achievements">
-  <div class="sectionTitle"><div><h2>Achievements</h2><p>Every achievement permanently adds +1% income.</p></div></div>
-  <div class="achGrid" id="achGrid"></div>
-</section>
-
-<section class="tabPane" id="stats">
-  <div class="sectionTitle"><div><h2>Empire stats</h2><p>Your progress is saved automatically on this device.</p></div></div>
-  <div class="statsGrid" id="statsGrid"></div>
-  <div class="tools">
-    <button id="saveNow">Save now</button>
-    <button id="exportSave">Copy save</button>
-    <button id="importSave">Import save</button>
-    <button class="danger" id="resetSave">Reset all progress</button>
-  </div>
+<section class="pane" id="legacy">
+ <div class="prestige">
+   <h2>◆ Sell the Empire</h2>
+   <div class="gain" id="prestigeGain">+0 Tokens</div>
+   <p>Prestige resets cash, businesses, managers, and normal upgrades. You keep achievements, lifetime stats, Empire Tokens, and Legacy upgrades.</p>
+   <button id="prestigeBtn" disabled>Earn $10M this run</button>
+ </div>
+ <div class="sectionHead" style="margin-top:16px"><div><h2>Legacy Upgrades</h2><p>Permanent boosts that survive every prestige.</p></div></div>
+ <div class="legacyGrid" id="legacyGrid"></div>
+ <div class="achievementWrap"><h3>Achievements</h3><div class="achievements" id="achievements"></div></div>
+ <div class="stats" id="stats"></div>
+ <div class="tools">
+   <button id="saveNow">Save</button><button id="exportSave">Copy Save</button><button id="importSave">Import</button><button class="danger" id="resetSave">Reset</button>
+ </div>
 </section>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<div class="modal" id="offlineModal" hidden>
-  <div class="modalBox">
-    <h2>Welcome back 👋</h2>
-    <p id="offlineText">Your managers kept the empire moving.</p>
-    <div class="modalValue" id="offlineValue">+$0</div>
-    <button id="offlineClaim">Collect earnings</button>
-  </div>
-</div>
+<div class="modal" id="offlineModal" hidden><div class="modalBox">
+ <h2>Welcome back</h2><p id="offlineText">Your managers kept the empire running.</p><div class="offlineCash" id="offlineCash">+$0</div><button id="offlineClaim">Collect</button>
+</div></div>
 
 <script>
 (function(){
-'use strict';
+"use strict";
 
-var SAVE_KEY='charlie_idle_empire_v1';
-var BACKUP_KEY='charlie_idle_empire_backup_v1';
-var VERSION=1;
-var buyMode='1';
+var SAVE_KEY="charlie_idle_empire_v1";
+var BACKUP_KEY="charlie_idle_empire_backup_v1";
+var VERSION=2;
+var buyMode="1";
 var lastTick=Date.now();
 var lastUi=0;
-var toastTimer=0;
 var pendingOffline=0;
 var eventOffer=null;
+var toastTimer=0;
 
 var businesses=[
- {id:'lemonade',name:'Lemonade Stand',icon:'🍋',cost:10,growth:1.15,income:2,cycle:1,managerCost:250,manager:'Mia Mixer'},
- {id:'carwash',name:'Car Wash',icon:'🚗',cost:500,growth:1.145,income:120,cycle:4,managerCost:12000,manager:'Cal Clean'},
- {id:'foodtruck',name:'Food Truck',icon:'🌮',cost:12000,growth:1.14,income:1300,cycle:6,managerCost:180000,manager:'Tara Tacos'},
- {id:'arcade',name:'Arcade',icon:'🕹️',cost:250000,growth:1.135,income:34000,cycle:10,managerCost:3000000,manager:'Pixel Pete'},
- {id:'dealer',name:'Dealership',icon:'🏎️',cost:5000000,growth:1.13,income:780000,cycle:15,managerCost:60000000,manager:'Danny Deals'},
- {id:'hotel',name:'Hotel',icon:'🏨',cost:120000000,growth:1.125,income:24000000,cycle:30,managerCost:1500000000,manager:'Holly Suites'},
- {id:'tech',name:'Tech Campus',icon:'💻',cost:3000000000,growth:1.12,income:820000000,cycle:60,managerCost:35000000000,manager:'Nova Byte'},
- {id:'tower',name:'Skyscraper',icon:'🏙️',cost:90000000000,growth:1.115,income:33000000000,cycle:120,managerCost:1000000000000,manager:'Victor Heights'}
+ {id:"lemonade",name:"Lemonade Stand",icon:"🍋",cost:20,growth:1.14,income:10,cycle:1,managerCost:350,manager:"Mia Mixer"},
+ {id:"carwash",name:"Car Wash",icon:"🚗",cost:500,growth:1.14,income:180,cycle:3,managerCost:10000,manager:"Cal Clean"},
+ {id:"foodtruck",name:"Food Truck",icon:"🌮",cost:12000,growth:1.135,income:3000,cycle:5,managerCost:180000,manager:"Tara Tacos"},
+ {id:"arcade",name:"Arcade",icon:"🕹️",cost:250000,growth:1.13,income:85000,cycle:8,managerCost:3000000,manager:"Pixel Pete"},
+ {id:"dealer",name:"Dealership",icon:"🏎️",cost:6000000,growth:1.125,income:2800000,cycle:12,managerCost:75000000,manager:"Danny Deals"},
+ {id:"hotel",name:"Hotel",icon:"🏨",cost:180000000,growth:1.12,income:120000000,cycle:20,managerCost:2500000000,manager:"Holly Suites"},
+ {id:"tech",name:"Tech Campus",icon:"💻",cost:6000000000,growth:1.115,income:5400000000,cycle:30,managerCost:90000000000,manager:"Nova Byte"},
+ {id:"tower",name:"Skyscraper",icon:"🏙️",cost:250000000000,growth:1.11,income:300000000000,cycle:45,managerCost:4000000000000,manager:"Victor Heights"}
 ];
 
 var upgrades=[
- {id:'lem25',name:'Fresh Squeezed',icon:'🍋',desc:'Lemonade Stand income ×3',cost:3000,kind:'biz',biz:0,mult:3,need:{biz:0,count:25}},
- {id:'lem100',name:'Citywide Lemon',icon:'🥤',desc:'Lemonade Stand income ×5',cost:80000,kind:'biz',biz:0,mult:5,need:{biz:0,count:100}},
- {id:'cw25',name:'Premium Wax',icon:'✨',desc:'Car Wash income ×3',cost:55000,kind:'biz',biz:1,mult:3,need:{biz:1,count:25}},
- {id:'cw100',name:'Turbo Tunnel',icon:'💦',desc:'Car Wash income ×5',cost:1500000,kind:'biz',biz:1,mult:5,need:{biz:1,count:100}},
- {id:'food25',name:'Secret Sauce',icon:'🌶️',desc:'Food Truck income ×3',cost:1000000,kind:'biz',biz:2,mult:3,need:{biz:2,count:25}},
- {id:'food100',name:'Franchise Recipe',icon:'📋',desc:'Food Truck income ×5',cost:24000000,kind:'biz',biz:2,mult:5,need:{biz:2,count:100}},
- {id:'arc25',name:'RGB Everything',icon:'🌈',desc:'Arcade income ×3',cost:18000000,kind:'biz',biz:3,mult:3,need:{biz:3,count:25}},
- {id:'arc100',name:'Mega Arcade',icon:'👾',desc:'Arcade income ×5',cost:350000000,kind:'biz',biz:3,mult:5,need:{biz:3,count:100}},
- {id:'deal25',name:'Luxury Inventory',icon:'🏁',desc:'Dealership income ×3',cost:320000000,kind:'biz',biz:4,mult:3,need:{biz:4,count:25}},
- {id:'deal100',name:'National Network',icon:'🛣️',desc:'Dealership income ×5',cost:7000000000,kind:'biz',biz:4,mult:5,need:{biz:4,count:100}},
- {id:'hotel25',name:'Penthouse Floors',icon:'🛎️',desc:'Hotel income ×3',cost:7500000000,kind:'biz',biz:5,mult:3,need:{biz:5,count:25}},
- {id:'hotel100',name:'Five-Star Brand',icon:'⭐',desc:'Hotel income ×5',cost:150000000000,kind:'biz',biz:5,mult:5,need:{biz:5,count:100}},
- {id:'tech25',name:'AI Operations',icon:'🤖',desc:'Tech Campus income ×3',cost:180000000000,kind:'biz',biz:6,mult:3,need:{biz:6,count:25}},
- {id:'tech100',name:'Global Cloud',icon:'☁️',desc:'Tech Campus income ×5',cost:3500000000000,kind:'biz',biz:6,mult:5,need:{biz:6,count:100}},
- {id:'tower25',name:'Executive Floors',icon:'💼',desc:'Skyscraper income ×3',cost:5000000000000,kind:'biz',biz:7,mult:3,need:{biz:7,count:25}},
- {id:'tower100',name:'Empire HQ',icon:'👑',desc:'Skyscraper income ×5',cost:90000000000000,kind:'biz',biz:7,mult:5,need:{biz:7,count:100}},
- {id:'global1',name:'Business School',icon:'🎓',desc:'All income ×2',cost:250000,kind:'global',mult:2,need:{life:100000}},
- {id:'global2',name:'Brand Machine',icon:'📣',desc:'All income ×3',cost:75000000,kind:'global',mult:3,need:{life:25000000}},
- {id:'global3',name:'Market Control',icon:'🌐',desc:'All income ×5',cost:25000000000,kind:'global',mult:5,need:{life:8000000000}},
- {id:'global4',name:'Mega Corporation',icon:'🏢',desc:'All income ×10',cost:8000000000000,kind:'global',mult:10,need:{life:2500000000000}}
+ {id:"lem25",name:"Fresh Squeezed",icon:"🍋",desc:"Lemonade income ×3",cost:2500,biz:0,need:25,mult:3},
+ {id:"lem100",name:"Lemon Empire",icon:"🥤",desc:"Lemonade income ×6",cost:75000,biz:0,need:100,mult:6},
+ {id:"cw25",name:"Premium Wax",icon:"✨",desc:"Car Wash income ×3",cost:45000,biz:1,need:25,mult:3},
+ {id:"cw100",name:"Tunnel Network",icon:"💦",desc:"Car Wash income ×6",cost:1200000,biz:1,need:100,mult:6},
+ {id:"food25",name:"Secret Sauce",icon:"🌶️",desc:"Food Truck income ×3",cost:700000,biz:2,need:25,mult:3},
+ {id:"food100",name:"Franchise Recipe",icon:"📋",desc:"Food Truck income ×6",cost:18000000,biz:2,need:100,mult:6},
+ {id:"arc25",name:"RGB Everything",icon:"🌈",desc:"Arcade income ×3",cost:12000000,biz:3,need:25,mult:3},
+ {id:"arc100",name:"Mega Arcade",icon:"👾",desc:"Arcade income ×6",cost:250000000,biz:3,need:100,mult:6},
+ {id:"deal25",name:"Luxury Inventory",icon:"🏁",desc:"Dealership income ×3",cost:250000000,biz:4,need:25,mult:3},
+ {id:"deal100",name:"National Network",icon:"🛣️",desc:"Dealership income ×6",cost:6000000000,biz:4,need:100,mult:6},
+ {id:"hotel25",name:"Penthouse Floors",icon:"🛎️",desc:"Hotel income ×3",cost:6000000000,biz:5,need:25,mult:3},
+ {id:"hotel100",name:"Five-Star Brand",icon:"⭐",desc:"Hotel income ×6",cost:120000000000,biz:5,need:100,mult:6},
+ {id:"tech25",name:"AI Operations",icon:"🤖",desc:"Tech Campus income ×3",cost:160000000000,biz:6,need:25,mult:3},
+ {id:"tech100",name:"Global Cloud",icon:"☁️",desc:"Tech Campus income ×6",cost:3000000000000,biz:6,need:100,mult:6},
+ {id:"tower25",name:"Executive Floors",icon:"💼",desc:"Skyscraper income ×3",cost:4500000000000,biz:7,need:25,mult:3},
+ {id:"tower100",name:"Empire HQ",icon:"👑",desc:"Skyscraper income ×6",cost:80000000000000,biz:7,need:100,mult:6},
+ {id:"global1",name:"Business School",icon:"🎓",desc:"All income ×2",cost:1000000,global:true,life:500000,mult:2},
+ {id:"global2",name:"Brand Machine",icon:"📣",desc:"All income ×3",cost:150000000,global:true,life:50000000,mult:3},
+ {id:"global3",name:"Market Control",icon:"🌐",desc:"All income ×5",cost:50000000000,global:true,life:15000000000,mult:5},
+ {id:"global4",name:"Mega Corporation",icon:"🏢",desc:"All income ×10",cost:15000000000000,global:true,life:5000000000000,mult:10}
 ];
 
-var prestigeNodes=[
- {id:'capital',name:'Capital I',desc:'All income +25% permanently.',cost:5},
- {id:'offline',name:'Operations I',desc:'Offline earnings +25%.',cost:5},
- {id:'events',name:'Opportunity I',desc:'Timed income boosts last 25% longer.',cost:8},
- {id:'startcash',name:'Head Start',desc:'Begin every new empire with $10K.',cost:10},
- {id:'milestones',name:'Milestone Mastery',desc:'Business milestone bonuses are 25% stronger.',cost:15},
- {id:'startermgr',name:'Trusted Manager',desc:'Lemonade manager starts hired after prestige.',cost:18},
- {id:'prestigeboost',name:'Legacy Investor',desc:'Prestige token gain +25%.',cost:20},
- {id:'offlinecap',name:'Night Shift',desc:'Offline earning cap extends by 8 hours.',cost:12}
+var legacy=[
+ {id:"capital",name:"Investor Network",desc:"+25% all income permanently.",cost:4},
+ {id:"offline",name:"Night Crew",desc:"+35% offline earnings.",cost:5},
+ {id:"startcash",name:"Head Start",desc:"Start new empires with $25K.",cost:8},
+ {id:"events",name:"Long Deals",desc:"Random boosts last 50% longer.",cost:7},
+ {id:"milestones",name:"Milestone Mastery",desc:"Milestone multipliers are 25% stronger.",cost:12},
+ {id:"startermgr",name:"Trusted Manager",desc:"Lemonade starts automated after prestige.",cost:15},
+ {id:"prestigeboost",name:"Legacy Investor",desc:"+25% Empire Tokens from prestige.",cost:18},
+ {id:"offlinecap",name:"Global Shift",desc:"Offline cap increases to 24 hours.",cost:10}
 ];
 
-var achievements=[
- {id:'firstbuy',name:'First Investment',text:'Buy your first business.',icon:'💵',test:function(){return totalOwned()>=1}},
- {id:'manager',name:'Hands Off',text:'Hire your first manager.',icon:'🧑‍💼',test:function(){return managerCount()>=1}},
- {id:'ten',name:'Ten Deep',text:'Own 10 of one business.',icon:'🔟',test:function(){return maxOwned()>=10}},
- {id:'hundred',name:'Century Club',text:'Own 100 of one business.',icon:'💯',test:function(){return maxOwned()>=100}},
- {id:'allbiz',name:'Full Portfolio',text:'Own every business.',icon:'🗂️',test:function(){return state.biz.every(function(b){return b.owned>0})}},
- {id:'allmgr',name:'Executive Team',text:'Hire all eight managers.',icon:'🤝',test:function(){return managerCount()>=8}},
- {id:'million',name:'Millionaire',text:'Earn $1M lifetime.',icon:'💰',test:function(){return state.lifetimeCash>=1e6}},
- {id:'billion',name:'Billionaire',text:'Earn $1B lifetime.',icon:'🏦',test:function(){return state.lifetimeCash>=1e9}},
- {id:'trillion',name:'Trillion Club',text:'Earn $1T lifetime.',icon:'💎',test:function(){return state.lifetimeCash>=1e12}},
- {id:'upgrades5',name:'Upgraded',text:'Buy 5 normal upgrades.',icon:'⬆️',test:function(){return state.upgrades.length>=5}},
- {id:'upgrades15',name:'Optimized',text:'Buy 15 normal upgrades.',icon:'⚙️',test:function(){return state.upgrades.length>=15}},
- {id:'event1',name:'Opportunity Knocks',text:'Claim your first random event.',icon:'💼',test:function(){return state.stats.events>=1}},
- {id:'event10',name:'Deal Hunter',text:'Claim 10 random events.',icon:'🎯',test:function(){return state.stats.events>=10}},
- {id:'prestige1',name:'New Beginning',text:'Sell your first empire.',icon:'◆',test:function(){return state.prestige.count>=1}},
- {id:'prestige5',name:'Serial Founder',text:'Prestige 5 times.',icon:'♻️',test:function(){return state.prestige.count>=5}},
- {id:'tokens50',name:'Legacy Wealth',text:'Earn 50 lifetime Empire Tokens.',icon:'🟣',test:function(){return state.prestige.lifetimeTokens>=50}},
- {id:'owned500',name:'Big Employer',text:'Own 500 total businesses.',icon:'🏗️',test:function(){return totalOwned()>=500}},
- {id:'owned2000',name:'Megacorp',text:'Own 2,000 total businesses.',icon:'🌆',test:function(){return totalOwned()>=2000}}
+var achievementDefs=[
+ {id:"first",name:"First Sale",text:"Earn your first dollar.",icon:"💵",test:function(){return state.lifetimeCash>=1}},
+ {id:"manager",name:"Hands Off",text:"Hire a manager.",icon:"🧑‍💼",test:function(){return managerCount()>=1}},
+ {id:"ten",name:"Ten Deep",text:"Own 10 of one business.",icon:"🔟",test:function(){return maxOwned()>=10}},
+ {id:"hundred",name:"Century Club",text:"Own 100 of one business.",icon:"💯",test:function(){return maxOwned()>=100}},
+ {id:"allbiz",name:"Full Portfolio",text:"Own all 8 businesses.",icon:"🗂️",test:function(){return state.biz.every(function(x){return x.owned>0})}},
+ {id:"allmgr",name:"Executive Team",text:"Hire all 8 managers.",icon:"🤝",test:function(){return managerCount()>=8}},
+ {id:"million",name:"Millionaire",text:"Earn $1M lifetime.",icon:"💰",test:function(){return state.lifetimeCash>=1e6}},
+ {id:"billion",name:"Billionaire",text:"Earn $1B lifetime.",icon:"🏦",test:function(){return state.lifetimeCash>=1e9}},
+ {id:"trillion",name:"Trillion Club",text:"Earn $1T lifetime.",icon:"💎",test:function(){return state.lifetimeCash>=1e12}},
+ {id:"up5",name:"Upgraded",text:"Buy 5 upgrades.",icon:"⬆️",test:function(){return state.upgrades.length>=5}},
+ {id:"up15",name:"Optimized",text:"Buy 15 upgrades.",icon:"⚙️",test:function(){return state.upgrades.length>=15}},
+ {id:"event1",name:"Opportunity",text:"Claim a random event.",icon:"⚡",test:function(){return state.stats.events>=1}},
+ {id:"event10",name:"Deal Hunter",text:"Claim 10 events.",icon:"🎯",test:function(){return state.stats.events>=10}},
+ {id:"p1",name:"New Beginning",text:"Prestige once.",icon:"◆",test:function(){return state.prestige.count>=1}},
+ {id:"p5",name:"Serial Founder",text:"Prestige 5 times.",icon:"♻️",test:function(){return state.prestige.count>=5}},
+ {id:"tok50",name:"Legacy Wealth",text:"Earn 50 lifetime Tokens.",icon:"🟣",test:function(){return state.prestige.lifetimeTokens>=50}},
+ {id:"units500",name:"Big Employer",text:"Own 500 units.",icon:"🏗️",test:function(){return totalOwned()>=500}},
+ {id:"units2000",name:"Megacorp",text:"Own 2,000 units.",icon:"🌆",test:function(){return totalOwned()>=2000}}
 ];
 
-function freshState(){
- var b=businesses.map(function(){return {owned:0,manager:false,running:false,progress:0}});
+function fresh(){
  return {
-  version:VERSION,cash:50,lifetimeCash:0,biz:b,upgrades:[],achievements:[],
+  version:VERSION,cash:100,runEarned:0,lifetimeCash:0,
+  biz:businesses.map(function(){return {owned:0,manager:false,running:false,progress:0}}),
+  upgrades:[],achievements:[],
   prestige:{tokens:0,lifetimeTokens:0,count:0,nodes:[]},
-  stats:{createdAt:Date.now(),lastSeen:Date.now(),playMs:0,purchases:0,events:0,totalPrestigeCash:0},
-  event:{type:null,endAt:0,biz:-1,nextAt:Date.now()+randomBetween(90000,220000)}
+  stats:{createdAt:Date.now(),lastSeen:Date.now(),playMs:0,purchases:0,events:0},
+  event:{type:null,biz:-1,endAt:0,nextAt:Date.now()+rand(60000,140000)}
  };
 }
-var state=freshState();
+var state=fresh();
 
-function safeNum(n,def){n=Number(n);return Number.isFinite(n)&&n>=0?n:def}
-function validate(raw){
- if(!raw||typeof raw!=='object')return null;
- var s=freshState();
- s.cash=safeNum(raw.cash,s.cash);s.lifetimeCash=safeNum(raw.lifetimeCash,0);
- if(Array.isArray(raw.biz))s.biz=s.biz.map(function(b,i){
-   var r=raw.biz[i]||{};
-   return {owned:Math.max(0,Math.floor(safeNum(r.owned,0))),manager:!!r.manager,running:!!r.running,progress:Math.max(0,safeNum(r.progress,0))};
- });
- s.upgrades=Array.isArray(raw.upgrades)?raw.upgrades.filter(function(x){return typeof x==='string'}):[];
- s.achievements=Array.isArray(raw.achievements)?raw.achievements.filter(function(x){return typeof x==='string'}):[];
- if(raw.prestige){
-   s.prestige.tokens=Math.max(0,Math.floor(safeNum(raw.prestige.tokens,0)));
-   s.prestige.lifetimeTokens=Math.max(0,Math.floor(safeNum(raw.prestige.lifetimeTokens,0)));
-   s.prestige.count=Math.max(0,Math.floor(safeNum(raw.prestige.count,0)));
-   s.prestige.nodes=Array.isArray(raw.prestige.nodes)?raw.prestige.nodes.filter(function(x){return typeof x==='string'}):[];
- }
- if(raw.stats){
-   s.stats.createdAt=safeNum(raw.stats.createdAt,Date.now());
-   s.stats.lastSeen=safeNum(raw.stats.lastSeen,Date.now());
-   s.stats.playMs=safeNum(raw.stats.playMs,0);
-   s.stats.purchases=Math.floor(safeNum(raw.stats.purchases,0));
-   s.stats.events=Math.floor(safeNum(raw.stats.events,0));
-   s.stats.totalPrestigeCash=safeNum(raw.stats.totalPrestigeCash,0);
- }
- if(raw.event){
-   s.event.type=typeof raw.event.type==='string'?raw.event.type:null;
-   s.event.endAt=safeNum(raw.event.endAt,0);
-   s.event.biz=Math.floor(Number.isFinite(Number(raw.event.biz))?Number(raw.event.biz):-1);
-   s.event.nextAt=safeNum(raw.event.nextAt,Date.now()+randomBetween(90000,220000));
- }
- return s;
-}
-
-function load(){
- try{
-  var raw=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
-  var good=validate(raw);
-  if(good){state=good;return true}
- }catch(e){}
- try{
-  var back=JSON.parse(localStorage.getItem(BACKUP_KEY)||'null');
-  var good2=validate(back);
-  if(good2){state=good2;toast('Recovered backup save');return true}
- }catch(e2){}
- return false;
-}
-
-function save(){
- try{
-  state.stats.lastSeen=Date.now();
-  var data=JSON.stringify(state);
-  var current=localStorage.getItem(SAVE_KEY);
-  if(current)localStorage.setItem(BACKUP_KEY,current);
-  localStorage.setItem(SAVE_KEY,data);
-  return true;
- }catch(e){toast('Save failed on this browser');return false}
-}
-
-function randomBetween(a,b){return Math.floor(a+Math.random()*(b-a))}
+function $(id){return document.getElementById(id)}
+function finite(n,d){n=Number(n);return Number.isFinite(n)&&n>=0?n:d}
+function rand(a,b){return Math.floor(a+Math.random()*(b-a))}
 function fmt(n){
  n=Number(n)||0;
- if(n<1000)return '$'+(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n));
- var units=['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
- var u=-1;
- while(n>=1000&&u<units.length-1){n/=1000;u++}
- if(u===units.length-1&&n>=1000)return '$'+n.toExponential(2);
- return '$'+(n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2))+units[u];
+ if(n<1000)return "$"+(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n));
+ var u=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"],i=-1;
+ while(n>=1000&&i<u.length-1){n/=1000;i++}
+ if(i===u.length-1&&n>=1000)return "$"+n.toExponential(2);
+ return "$"+(n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2))+u[i];
 }
-function num(n){return (Math.round(n*100)/100).toLocaleString()}
-function hasUpgrade(id){return state.upgrades.indexOf(id)>=0}
+function short(n){return Math.floor(n).toLocaleString()}
 function hasNode(id){return state.prestige.nodes.indexOf(id)>=0}
+function hasUpgrade(id){return state.upgrades.indexOf(id)>=0}
 function totalOwned(){return state.biz.reduce(function(a,b){return a+b.owned},0)}
 function maxOwned(){return state.biz.reduce(function(a,b){return Math.max(a,b.owned)},0)}
 function managerCount(){return state.biz.reduce(function(a,b){return a+(b.manager?1:0)},0)}
 function achievementCount(){return state.achievements.length}
 
-function milestoneMult(owned){
+function validate(raw){
+ if(!raw||typeof raw!=="object")return null;
+ var s=fresh();
+ s.cash=finite(raw.cash,s.cash);
+ s.lifetimeCash=finite(raw.lifetimeCash,0);
+ s.runEarned=finite(raw.runEarned,Math.min(s.lifetimeCash,1e12));
+ if(Array.isArray(raw.biz))s.biz=s.biz.map(function(x,i){
+  var r=raw.biz[i]||{};
+  return {owned:Math.max(0,Math.floor(finite(r.owned,0))),manager:!!r.manager,running:!!r.running,progress:finite(r.progress,0)};
+ });
+ s.upgrades=Array.isArray(raw.upgrades)?raw.upgrades.filter(function(x){return typeof x==="string"}):[];
+ s.achievements=Array.isArray(raw.achievements)?raw.achievements.filter(function(x){return typeof x==="string"}):[];
+ if(raw.prestige){
+  s.prestige.tokens=Math.floor(finite(raw.prestige.tokens,0));
+  s.prestige.lifetimeTokens=Math.floor(finite(raw.prestige.lifetimeTokens,0));
+  s.prestige.count=Math.floor(finite(raw.prestige.count,0));
+  s.prestige.nodes=Array.isArray(raw.prestige.nodes)?raw.prestige.nodes.filter(function(x){return typeof x==="string"}):[];
+ }
+ if(raw.stats){
+  s.stats.createdAt=finite(raw.stats.createdAt,Date.now());
+  s.stats.lastSeen=finite(raw.stats.lastSeen,Date.now());
+  s.stats.playMs=finite(raw.stats.playMs,0);
+  s.stats.purchases=Math.floor(finite(raw.stats.purchases,0));
+  s.stats.events=Math.floor(finite(raw.stats.events,0));
+ }
+ if(raw.event){
+  s.event.type=typeof raw.event.type==="string"?raw.event.type:null;
+  s.event.biz=Number.isFinite(Number(raw.event.biz))?Math.floor(Number(raw.event.biz)):-1;
+  s.event.endAt=finite(raw.event.endAt,0);
+  s.event.nextAt=finite(raw.event.nextAt,Date.now()+rand(60000,140000));
+ }
+ s.version=VERSION;
+ return s;
+}
+function load(){
+ try{
+  var v=validate(JSON.parse(localStorage.getItem(SAVE_KEY)||"null"));
+  if(v){state=v;return true}
+ }catch(e){}
+ try{
+  var b=validate(JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"));
+  if(b){state=b;return true}
+ }catch(e2){}
+ return false;
+}
+function save(){
+ try{
+  state.stats.lastSeen=Date.now();
+  var old=localStorage.getItem(SAVE_KEY);
+  if(old)localStorage.setItem(BACKUP_KEY,old);
+  localStorage.setItem(SAVE_KEY,JSON.stringify(state));
+  return true;
+ }catch(e){toast("Save failed");return false}
+}
+
+function milestoneMult(n){
  var m=1;
- if(owned>=10)m*=2;
- if(owned>=25)m*=2;
- if(owned>=50)m*=3;
- if(owned>=100)m*=4;
- if(owned>=200)m*=5;
- if(owned>=500)m*=10;
- if(owned>=1000)m*=25;
- if(hasNode('milestones')&&m>1)m*=1.25;
+ if(n>=10)m*=2;if(n>=25)m*=2;if(n>=50)m*=3;if(n>=100)m*=4;if(n>=200)m*=5;if(n>=500)m*=10;if(n>=1000)m*=25;
+ if(hasNode("milestones")&&m>1)m*=1.25;
  return m;
 }
-function nextMilestone(owned){
- var arr=[10,25,50,100,200,500,1000];
- for(var i=0;i<arr.length;i++)if(owned<arr[i])return arr[i];
+function nextMilestone(n){
+ var a=[10,25,50,100,200,500,1000];
+ for(var i=0;i<a.length;i++)if(n<a[i])return a[i];
  return null;
 }
 function bizUpgradeMult(i){
  var m=1;
- upgrades.forEach(function(u){if(u.kind==='biz'&&u.biz===i&&hasUpgrade(u.id))m*=u.mult});
+ upgrades.forEach(function(u){if(u.biz===i&&hasUpgrade(u.id))m*=u.mult});
  return m;
 }
-function globalUpgradeMult(){
+function globalMult(){
  var m=1;
- upgrades.forEach(function(u){if(u.kind==='global'&&hasUpgrade(u.id))m*=u.mult});
+ upgrades.forEach(function(u){if(u.global&&hasUpgrade(u.id))m*=u.mult});
  return m;
 }
 function permanentMult(){
  var m=1+state.prestige.lifetimeTokens*.10;
- if(hasNode('capital'))m*=1.25;
+ if(hasNode("capital"))m*=1.25;
  m*=1+achievementCount()*.01;
  return m;
 }
 function eventMult(i){
  if(!state.event.type||Date.now()>=state.event.endAt)return 1;
- if(state.event.type==='double')return 2;
- if(state.event.type==='viral'&&state.event.biz===i)return 5;
+ if(state.event.type==="double")return 2;
+ if(state.event.type==="viral"&&state.event.biz===i)return 5;
  return 1;
 }
-function payout(i){
- var b=businesses[i],s=state.biz[i];
- return s.owned*b.income*milestoneMult(s.owned)*bizUpgradeMult(i)*globalUpgradeMult()*permanentMult()*eventMult(i);
+function payout(i,ignoreEvent){
+ var b=businesses[i],x=state.biz[i],ev=ignoreEvent?1:eventMult(i);
+ return x.owned*b.income*milestoneMult(x.owned)*bizUpgradeMult(i)*globalMult()*permanentMult()*ev;
 }
-function incomePerSec(){
+function ips(){
  var total=0;
- state.biz.forEach(function(s,i){if(s.manager&&s.owned>0)total+=payout(i)/businesses[i].cycle});
+ state.biz.forEach(function(x,i){if(x.manager&&x.owned>0)total+=payout(i,false)/businesses[i].cycle});
  return total;
 }
 function offlineIps(){
  var total=0;
- state.biz.forEach(function(s,i){if(s.manager&&s.owned>0){
-   var ev=state.event;state.event={type:null,endAt:0,biz:-1,nextAt:ev.nextAt};
-   total+=payout(i)/businesses[i].cycle;
-   state.event=ev;
- }});
+ state.biz.forEach(function(x,i){if(x.manager&&x.owned>0)total+=payout(i,true)/businesses[i].cycle});
  return total;
 }
-function costFor(i,qty){
+function costFor(i,q){
  var b=businesses[i],n=state.biz[i].owned;
- if(qty<=0)return 0;
- return b.cost*Math.pow(b.growth,n)*(Math.pow(b.growth,qty)-1)/(b.growth-1);
+ if(q<=0)return 0;
+ return b.cost*Math.pow(b.growth,n)*(Math.pow(b.growth,q)-1)/(b.growth-1);
 }
 function maxAffordable(i){
- var b=businesses[i],n=state.biz[i].owned,cash=state.cash;
- var first=b.cost*Math.pow(b.growth,n);
- if(cash<first)return 0;
- return Math.max(0,Math.floor(Math.log(1+cash*(b.growth-1)/first)/Math.log(b.growth)));
+ var b=businesses[i],n=state.biz[i].owned,first=b.cost*Math.pow(b.growth,n);
+ if(state.cash<first)return 0;
+ return Math.max(0,Math.floor(Math.log(1+state.cash*(b.growth-1)/first)/Math.log(b.growth)));
 }
-function qtyFor(i){
- if(buyMode==='max')return maxAffordable(i);
- return Number(buyMode);
+function qty(i){return buyMode==="max"?maxAffordable(i):Number(buyMode)}
+function earn(n){
+ if(!Number.isFinite(n)||n<=0)return;
+ state.cash=Math.min(1e305,state.cash+n);
+ state.runEarned=Math.min(1e305,state.runEarned+n);
+ state.lifetimeCash=Math.min(1e305,state.lifetimeCash+n);
 }
-function canUnlockUpgrade(u){
- if(u.need.biz!==undefined)return state.biz[u.need.biz].owned>=u.need.count;
- if(u.need.life!==undefined)return state.lifetimeCash>=u.need.life;
- return true;
-}
-function earn(amount){
- if(!Number.isFinite(amount)||amount<=0)return;
- state.cash+=amount;
- state.lifetimeCash+=amount;
- if(state.cash>1e305)state.cash=1e305;
- if(state.lifetimeCash>1e305)state.lifetimeCash=1e305;
-}
-function spend(amount){
- if(state.cash+1e-9<amount)return false;
- state.cash=Math.max(0,state.cash-amount);
- return true;
-}
+function spend(n){if(state.cash+1e-9<n)return false;state.cash=Math.max(0,state.cash-n);return true}
 
 function buyBusiness(i){
- var q=qtyFor(i);
- if(q<1)return toast('Not enough cash');
- var cost=costFor(i,q);
- if(!spend(cost))return toast('Not enough cash');
- state.biz[i].owned+=q;
- state.stats.purchases+=q;
- toast('Bought '+q+' '+businesses[i].name+(q===1?'':'s'));
- checkAchievements();
- renderAll();
-}
-function runBusiness(i){
- var s=state.biz[i];
- if(s.owned<=0)return toast('Buy the business first');
- if(s.manager)return;
- if(s.running)return;
- s.running=true;s.progress=0;
- renderBusinesses();
-}
-function buyManager(i){
- var s=state.biz[i],b=businesses[i];
- if(s.manager)return;
- if(s.owned<=0)return toast('Own the business first');
- if(!spend(b.managerCost))return toast('Not enough cash');
- s.manager=true;s.running=true;s.progress=0;
- toast(b.manager+' hired');
- checkAchievements();
- renderAll();
-}
-function buyUpgrade(id){
- var u=upgrades.find(function(x){return x.id===id});
- if(!u||hasUpgrade(id)||!canUnlockUpgrade(u))return;
- if(!spend(u.cost))return toast('Not enough cash');
- state.upgrades.push(id);
- toast(u.name+' unlocked');
+ var q=qty(i);if(q<1)return toast("Not enough cash");
+ var cost=costFor(i,q);if(!spend(cost))return toast("Not enough cash");
+ state.biz[i].owned+=q;state.stats.purchases+=q;
  checkAchievements();renderAll();
 }
-function buyNode(id){
- var n=prestigeNodes.find(function(x){return x.id===id});
- if(!n||hasNode(id))return;
- if(state.prestige.tokens<n.cost)return toast('Need more Empire Tokens');
- state.prestige.tokens-=n.cost;state.prestige.nodes.push(id);
- toast(n.name+' unlocked permanently');
- renderAll();save();
+function startBusiness(i){
+ var x=state.biz[i];
+ if(x.owned<=0)return toast("Buy it first");
+ if(x.manager)return toast("Manager is already running it");
+ if(x.running)return;
+ x.running=true;x.progress=0;renderBusinesses();
 }
-
-function prestigeEntitled(){
- var base=Math.floor(10*Math.pow(Math.max(0,state.lifetimeCash)/1e10,.30));
- if(hasNode('prestigeboost'))base=Math.floor(base*1.25);
- return Math.max(0,base-state.prestige.lifetimeTokens);
+function collectCycle(i,amount){
+ earn(amount);
+ var row=document.querySelector('[data-row="'+i+'"]');
+ if(row){
+  var p=document.createElement("div");p.className="incomePop";p.textContent="+"+fmt(amount);
+  row.appendChild(p);setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p)},800);
+ }
 }
-function doPrestige(){
- var gain=prestigeEntitled();
- if(gain<1)return;
- if(!confirm('Sell this empire for +'+gain+' Empire Tokens? Cash, businesses, managers, and normal upgrades will reset.'))return;
- state.prestige.tokens+=gain;
- state.prestige.lifetimeTokens+=gain;
- state.prestige.count++;
- state.stats.totalPrestigeCash+=state.cash;
- state.cash=hasNode('startcash')?10000:50;
+function hireManager(i){
+ var x=state.biz[i],b=businesses[i];
+ if(x.manager)return;if(x.owned<1)return toast("Buy the business first");
+ if(!spend(b.managerCost))return toast("Not enough cash");
+ x.manager=true;x.running=true;x.progress=0;toast(b.manager+" hired");checkAchievements();renderAll();
+}
+function upgradeOpen(u){return u.global?state.lifetimeCash>=u.life:state.biz[u.biz].owned>=u.need}
+function buyUpgrade(id){
+ var u=upgrades.find(function(x){return x.id===id});
+ if(!u||hasUpgrade(id)||!upgradeOpen(u))return;
+ if(!spend(u.cost))return toast("Not enough cash");
+ state.upgrades.push(id);toast(u.name+" unlocked");checkAchievements();renderAll();
+}
+function prestigeGain(){
+ var g=Math.floor(Math.sqrt(Math.max(0,state.runEarned)/10000000));
+ if(hasNode("prestigeboost"))g=Math.floor(g*1.25);
+ return g;
+}
+function prestige(){
+ var g=prestigeGain();if(g<1)return;
+ if(!confirm("Sell this empire for +"+g+" Empire Tokens?"))return;
+ state.prestige.tokens+=g;state.prestige.lifetimeTokens+=g;state.prestige.count++;
+ state.cash=hasNode("startcash")?25000:100;
+ state.runEarned=0;
  state.biz=businesses.map(function(){return {owned:0,manager:false,running:false,progress:0}});
- if(hasNode('startermgr'))state.biz[0].manager=true;
+ if(hasNode("startermgr"))state.biz[0].manager=true;
  state.upgrades=[];
- state.event={type:null,endAt:0,biz:-1,nextAt:Date.now()+randomBetween(90000,220000)};
- toast('New empire! +'+gain+' Tokens');
- checkAchievements();save();renderAll();
+ state.event={type:null,biz:-1,endAt:0,nextAt:Date.now()+rand(60000,140000)};
+ eventOffer=null;$("eventBtn").hidden=true;
+ checkAchievements();save();renderAll();toast("New empire: +"+g+" Tokens");
+}
+function buyLegacy(id){
+ var n=legacy.find(function(x){return x.id===id});
+ if(!n||hasNode(id))return;
+ if(state.prestige.tokens<n.cost)return toast("Need more Tokens");
+ state.prestige.tokens-=n.cost;state.prestige.nodes.push(id);save();renderAll();toast(n.name+" unlocked");
 }
 
+function checkAchievements(){
+ var got=[];
+ achievementDefs.forEach(function(a){
+  if(state.achievements.indexOf(a.id)<0&&a.test()){state.achievements.push(a.id);got.push(a.name)}
+ });
+ if(got.length)toast("🏆 "+got[0]);
+}
 function spawnEvent(){
  if(eventOffer||state.event.type)return;
- var roll=Math.random();
- if(roll<.38)eventOffer={type:'double',title:'Investor Frenzy',text:'2× all income'};
- else if(roll<.66)eventOffer={type:'viral',title:'Viral Business',text:'5× one business'};
- else if(roll<.84)eventOffer={type:'sale',title:'Flash Sale',text:'25% instant cash boost'};
- else eventOffer={type:'briefcase',title:'Golden Briefcase',text:'90 sec of income instantly'};
- $('eventBtn').textContent='💼 '+eventOffer.title.toUpperCase()+'!';
- $('eventBtn').hidden=false;
+ var r=Math.random();
+ if(r<.45)eventOffer={type:"double",title:"2× ALL INCOME"};
+ else if(r<.72)eventOffer={type:"viral",title:"5× BUSINESS"};
+ else if(r<.88)eventOffer={type:"cash",title:"CASH DROP"};
+ else eventOffer={type:"skip",title:"TIME WARP"};
+ $("eventBtn").textContent="⚡ "+eventOffer.title;$("eventBtn").hidden=false;
 }
 function claimEvent(){
  if(!eventOffer)return;
- var e=eventOffer;eventOffer=null;$('eventBtn').hidden=true;
- var dur=hasNode('events')?37500:30000;
- if(e.type==='double'){
-  state.event={type:'double',endAt:Date.now()+dur,biz:-1,nextAt:Date.now()+randomBetween(90000,220000)};
-  toast('2× income for '+Math.round(dur/1000)+' seconds!');
- }else if(e.type==='viral'){
-  var choices=[];state.biz.forEach(function(b,i){if(b.owned>0)choices.push(i)});
-  var bi=choices.length?choices[Math.floor(Math.random()*choices.length)]:0;
-  state.event={type:'viral',endAt:Date.now()+dur,biz:bi,nextAt:Date.now()+randomBetween(90000,220000)};
-  toast(businesses[bi].name+' is viral: 5× income!');
- }else if(e.type==='sale'){
-  var reward=incomePerSec()*75+Math.max(100,state.cash*.08);
-  earn(reward);
-  state.event.nextAt=Date.now()+randomBetween(90000,220000);
-  toast('Flash deal: +'+fmt(reward));
+ var e=eventOffer;eventOffer=null;$("eventBtn").hidden=true;
+ var dur=hasNode("events")?45000:30000;
+ if(e.type==="double"){
+  state.event={type:"double",biz:-1,endAt:Date.now()+dur,nextAt:Date.now()+rand(70000,150000)};toast("2× all income!");
+ }else if(e.type==="viral"){
+  var owned=[];state.biz.forEach(function(x,i){if(x.owned>0)owned.push(i)});
+  var bi=owned.length?owned[Math.floor(Math.random()*owned.length)]:0;
+  state.event={type:"viral",biz:bi,endAt:Date.now()+dur,nextAt:Date.now()+rand(70000,150000)};toast("5× "+businesses[bi].name+"!");
+ }else if(e.type==="cash"){
+  var money=Math.max(250,ips()*90,state.cash*.08);earn(money);state.event.nextAt=Date.now()+rand(70000,150000);toast("Cash drop: +"+fmt(money));
  }else{
-  var cash=incomePerSec()*90+100;
-  earn(cash);
-  state.event.nextAt=Date.now()+randomBetween(90000,220000);
-  toast('Briefcase collected: +'+fmt(cash));
+  var warp=Math.max(100,ips()*120);earn(warp);state.event.nextAt=Date.now()+rand(70000,150000);toast("Time warp: +"+fmt(warp));
  }
  state.stats.events++;checkAchievements();renderAll();
 }
 
-function checkAchievements(){
- var gained=[];
- achievements.forEach(function(a){
-  if(state.achievements.indexOf(a.id)<0&&a.test()){state.achievements.push(a.id);gained.push(a.name)}
- });
- if(gained.length)toast('🏆 '+gained[0]+' unlocked');
+function offline(){
+ var away=Math.max(0,(Date.now()-state.stats.lastSeen)/1000);
+ if(away<15)return;
+ var cap=hasNode("offlinecap")?86400:43200;away=Math.min(away,cap);
+ var effective=Math.min(away,14400)+Math.max(0,away-14400)*.35;
+ var reward=offlineIps()*effective*(hasNode("offline")?1.35:1);
+ if(reward<=0)return;
+ pendingOffline=reward;
+ $("offlineText").textContent="Away for "+duration(away)+". Your managers kept earning.";
+ $("offlineCash").textContent="+"+fmt(reward);$("offlineModal").hidden=false;
 }
+function duration(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+"h "+m+"m":Math.max(1,m)+"m"}
+function collectOffline(){if(pendingOffline>0){earn(pendingOffline);pendingOffline=0}$("offlineModal").hidden=true;renderAll();save()}
 
 function tick(){
- var now=Date.now();
- var dt=Math.min(2,(now-lastTick)/1000);
- lastTick=now;
- state.stats.playMs+=dt*1000;
-
- if(state.event.type&&now>=state.event.endAt){
-  state.event.type=null;state.event.endAt=0;state.event.biz=-1;
-  state.event.nextAt=now+randomBetween(90000,220000);
-  toast('Boost ended');
- }
- if(!state.event.type&&now>=state.event.nextAt&&!eventOffer)spawnEvent();
-
- state.biz.forEach(function(s,i){
-  if(s.owned<=0)return;
-  if(s.manager||s.running){
-   s.progress+=dt;
+ var now=Date.now(),dt=Math.min(2,(now-lastTick)/1000);lastTick=now;state.stats.playMs+=dt*1000;
+ if(state.event.type&&now>=state.event.endAt){state.event.type=null;state.event.biz=-1;state.event.endAt=0;state.event.nextAt=now+rand(70000,150000);toast("Boost ended")}
+ if(!state.event.type&&!eventOffer&&now>=state.event.nextAt)spawnEvent();
+ state.biz.forEach(function(x,i){
+  if(x.owned<=0)return;
+  if(x.manager||x.running){
+   x.progress+=dt;
    var cycle=businesses[i].cycle;
-   if(s.manager){
-    var count=Math.floor(s.progress/cycle);
-    if(count>0){earn(payout(i)*count);s.progress-=count*cycle}
-   }else if(s.progress>=cycle){
-    earn(payout(i));s.progress=0;s.running=false;
+   if(x.manager){
+    var count=Math.floor(x.progress/cycle);
+    if(count>0){collectCycle(i,payout(i,false)*count);x.progress-=count*cycle}
+   }else if(x.progress>=cycle){
+    collectCycle(i,payout(i,false));x.progress=0;x.running=false;
    }
   }
  });
  checkAchievements();
- if(now-lastUi>100){renderHud();renderBusinessesProgress();lastUi=now}
+ if(now-lastUi>100){renderHud();renderProgress();lastUi=now}
  requestAnimationFrame(tick);
 }
 
-function offline(){
- var now=Date.now();
- var away=Math.max(0,(now-state.stats.lastSeen)/1000);
- if(away<15)return;
- var cap=hasNode('offlinecap')?32*3600:24*3600;
- away=Math.min(away,cap);
- var full=Math.min(away,8*3600),slow=Math.max(0,away-8*3600);
- var eff=full+slow*.25;
- var mult=hasNode('offline')?1.25:1;
- var reward=offlineIps()*eff*mult;
- if(reward<=0)return;
- pendingOffline=reward;
- $('offlineText').textContent='Away for '+formatDuration(away)+'. Your hired managers kept working.';
- $('offlineValue').textContent='+'+fmt(reward);
- $('offlineModal').hidden=false;
-}
-function collectOffline(){
- if(pendingOffline>0){earn(pendingOffline);toast('Offline earnings collected');pendingOffline=0}
- $('offlineModal').hidden=true;renderAll();save();
-}
-
-function formatDuration(sec){
- sec=Math.floor(sec);
- var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60);
- if(h)return h+'h '+m+'m';
- return Math.max(1,m)+'m';
-}
-function toast(msg){
- var t=$('toast');t.textContent=msg;t.classList.add('show');
- clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},1800);
-}
-function $(id){return document.getElementById(id)}
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show")},1600)}
 
 function renderHud(){
- $('cash').textContent=fmt(state.cash);
- $('ips').textContent='+'+fmt(incomePerSec()).replace('$','')+'/sec';
- $('lifeCash').textContent=fmt(state.lifetimeCash);
- $('tokens').textContent=num(state.prestige.tokens);
- $('tokenTop').textContent='◆ '+num(state.prestige.tokens);
- $('tokenBonus').textContent='+'+Math.round((permanentMult()-1)*100)+'% permanent income';
- $('ownedTotal').textContent=num(totalOwned());
- $('achCount').textContent=achievementCount()+' / '+achievements.length;
- renderGoal();
- renderCity();
- renderBoost();
+ $("cash").textContent=fmt(state.cash);$("ips").textContent="+"+fmt(ips()).replace("$","")+"/sec";
+ $("tokenTop").textContent="◆ "+short(state.prestige.tokens);$("runCash").textContent=fmt(state.runEarned);
+ $("units").textContent=short(totalOwned());$("managerCount").textContent=managerCount()+" / 8";
+ $("achievementCount").textContent=achievementCount()+" / "+achievementDefs.length;
+ renderGoal();renderCity();renderBoost();
 }
 function renderGoal(){
- var title='First goal: hire a manager',text='Managers automate businesses so they keep earning without you.',pct=0;
- if(managerCount()<1){pct=Math.min(100,state.cash/businesses[0].managerCost*100)}
- else if(state.biz[3].owned<=0){title='Build an Arcade';text='Reach '+fmt(businesses[3].cost)+' and add an Arcade to your empire.';pct=Math.min(100,state.cash/businesses[3].cost*100)}
- else if(state.prestige.count===0){var g=prestigeEntitled();title='Prepare your first prestige';text='Grow lifetime earnings until selling the empire earns at least 1 Token.';pct=Math.min(100,Math.pow(state.lifetimeCash/1e10,.3)*100/10)}
- else if(managerCount()<8){title='Automate everything';text='Hire all 8 managers so every business earns on its own.';pct=managerCount()/8*100}
- else{title='Grow the legacy';text='Stack milestones, achievements, upgrades, and prestige nodes.';pct=Math.min(100,state.prestige.lifetimeTokens)}
- $('goalTitle').textContent=title;$('goalText').textContent=text;$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=Math.max(0,Math.min(100,pct))+'%';
+ var title,copy,p=0;
+ if(managerCount()===0){title="Get your first manager";copy="Earn "+fmt(businesses[0].managerCost)+" and automate Lemonade.";p=Math.min(100,state.cash/businesses[0].managerCost*100)}
+ else if(state.biz[1].owned===0){title="Open a Car Wash";copy="Reach "+fmt(businesses[1].cost)+" to unlock your second business.";p=Math.min(100,state.cash/businesses[1].cost*100)}
+ else if(state.biz[3].owned===0){title="Build an Arcade";copy="Keep scaling until you can afford "+fmt(businesses[3].cost)+".";p=Math.min(100,state.cash/businesses[3].cost*100)}
+ else if(state.prestige.count===0){title="Earn your first Empire Token";copy="Reach "+fmt(10000000)+" earned this run to unlock prestige.";p=Math.min(100,state.runEarned/10000000*100)}
+ else{title="Grow the legacy";copy="Stack managers, milestones, upgrades, and Tokens.";p=Math.min(100,(managerCount()/8)*55+(achievementCount()/achievementDefs.length)*45)}
+ $("goalTitle").textContent=title;$("goalCopy").textContent=copy;$("goalPct").textContent=Math.floor(p)+"%";$("goalBar").style.width=Math.max(0,Math.min(100,p))+"%";
 }
 function renderCity(){
- var unlocked=0;
- document.querySelectorAll('.building').forEach(function(el,i){
-  var on=state.biz[i].owned>0;el.classList.toggle('unlocked',on);el.classList.toggle('hot',state.event.type==='viral'&&state.event.biz===i);
-  if(on)unlocked++;
- });
- var names=['Tiny Startup','Side Hustle City','Local Business Row','Growing District','Downtown Operator','City Mogul','Metro Empire','Skyline Empire','Global Empire'];
- $('cityName').textContent=names[Math.min(unlocked,names.length-1)];
- $('citySub').textContent=unlocked===8?'Every skyline starts with one stand.':(unlocked+' of 8 business districts active');
+ var towers=document.querySelectorAll(".tower"),unlocked=0;
+ towers.forEach(function(t,i){var on=state.biz[i].owned>0;t.classList.toggle("on",on);t.classList.toggle("hot",state.event.type==="viral"&&state.event.biz===i);if(on)unlocked++});
+ var names=["Corner Hustle","Side Hustle Strip","Local Operator","Business District","Downtown Builder","City Mogul","Metro Empire","Skyline Owner","Global Empire"];
+ $("cityName").textContent=names[unlocked];$("citySub").textContent=unlocked+" of 8 districts operating";
 }
 function renderBoost(){
- var txt='No active boost';
+ var s="No active boost";
  if(state.event.type&&Date.now()<state.event.endAt){
-  var left=Math.max(0,Math.ceil((state.event.endAt-Date.now())/1000));
-  if(state.event.type==='double')txt='⚡ 2× ALL INCOME · '+left+'s';
-  if(state.event.type==='viral')txt='🔥 5× '+businesses[state.event.biz].name.toUpperCase()+' · '+left+'s';
+  var left=Math.ceil((state.event.endAt-Date.now())/1000);
+  s=state.event.type==="double"?"⚡ 2× ALL INCOME · "+left+"s":"🔥 5× "+businesses[state.event.biz].name.toUpperCase()+" · "+left+"s";
  }
- $('boostPill').textContent=txt;
+ $("boost").textContent=s;
 }
-function fillWindows(){
- document.querySelectorAll('.windows').forEach(function(w){if(!w.children.length){for(var i=0;i<16;i++){var x=document.createElement('i');w.appendChild(x)}}});
-}
-
 function renderBusinesses(){
- var box=$('businessList');box.innerHTML='';
+ var box=$("businesses");box.innerHTML="";
  businesses.forEach(function(b,i){
-  var s=state.biz[i],q=qtyFor(i),cost=q>0?costFor(i,q):costFor(i,1),next=nextMilestone(s.owned);
-  var row=document.createElement('div');row.className='biz'+(s.owned===0?' locked':'');
-  var status=s.manager?'AUTO':s.running?'RUNNING':'START';
-  var meta=s.owned?fmt(payout(i))+' / '+b.cycle+'s cycle':'Unlock from '+fmt(b.cost);
-  var ms=next?(next-s.owned)+' more → milestone at '+next:'All listed milestones reached';
+  var x=state.biz[i],q=qty(i),buyQ=q>0?q:(buyMode==="max"?1:Number(buyMode)),cost=costFor(i,buyQ),next=nextMilestone(x.owned);
+  var row=document.createElement("div");row.className="biz"+(x.owned===0?" locked":"");row.setAttribute("data-row",i);
+  var cycleIncome=x.owned>0?fmt(payout(i,false))+" every "+b.cycle+"s":"First unit "+fmt(b.cost);
+  var mile=next?(next-x.owned)+" more to ×"+milestoneMult(next)+" milestone":"All milestones reached";
+  var runText=x.manager?"AUTO":x.running?"RUNNING":"RUN";
   row.innerHTML='<div class="bizIcon">'+b.icon+'</div>'+
-   '<div><div class="bizTitle"><strong>'+b.name+'</strong><span class="level">OWNED '+s.owned+'</span></div>'+
-   '<div class="bizMeta">'+meta+'</div><div class="milestone">'+ms+'</div><div class="bizProgress"><i id="prog'+i+'"></i></div></div>'+
-   '<div class="bizActions"><button class="buyBtn" data-buybiz="'+i+'">BUY '+(buyMode==='max'?'MAX':q)+' · '+fmt(cost)+'</button>'+
-   '<button class="runBtn '+(s.manager?'auto':'')+'" data-runbiz="'+i+'" '+(s.manager||s.running||s.owned===0?'disabled':'')+'>'+status+'</button></div>';
+   '<div><div class="bizTop"><span class="bizName">'+b.name+'</span><span class="owned">OWNED '+x.owned+'</span></div>'+
+   '<div class="bizInfo">'+cycleIncome+'</div><div class="milestone">'+mile+'</div><div class="progress"><i id="prog'+i+'"></i></div></div>'+
+   '<div class="actions"><button class="buy '+(state.cash>=cost?"canBuy":"")+'" data-buybiz="'+i+'">BUY '+(buyMode==="max"?(q||"MAX"):buyQ)+' · '+fmt(cost)+'</button>'+
+   '<button class="run '+(x.manager?"auto":x.running?"wait":"")+'" data-run="'+i+'" '+(x.owned===0||x.manager||x.running?"disabled":"")+'>'+runText+'</button></div>';
   box.appendChild(row);
  });
- box.querySelectorAll('[data-buybiz]').forEach(function(b){b.onclick=function(){buyBusiness(+b.dataset.buybiz)}});
- box.querySelectorAll('[data-runbiz]').forEach(function(b){b.onclick=function(){runBusiness(+b.dataset.runbiz)}});
- renderBusinessesProgress();
+ box.querySelectorAll("[data-buybiz]").forEach(function(btn){btn.onclick=function(){buyBusiness(+btn.dataset.buybiz)}});
+ box.querySelectorAll("[data-run]").forEach(function(btn){btn.onclick=function(){startBusiness(+btn.dataset.run)}});
+ renderProgress();
 }
-function renderBusinessesProgress(){
- state.biz.forEach(function(s,i){
-  var el=$('prog'+i);if(!el)return;
-  var p=s.owned>0?Math.min(100,s.progress/businesses[i].cycle*100):0;
-  el.style.width=p+'%';
- });
+function renderProgress(){
+ state.biz.forEach(function(x,i){var p=$("prog"+i);if(p)p.style.width=(x.owned>0?Math.min(100,x.progress/businesses[i].cycle*100):0)+"%"});
 }
 function renderUpgrades(){
- var box=$('upgradeList');box.innerHTML='';
+ var box=$("upgradeCards");box.innerHTML="";
  upgrades.forEach(function(u){
-  var bought=hasUpgrade(u.id),open=canUnlockUpgrade(u);
-  var card=document.createElement('div');card.className='card'+(bought?' bought':open?'':' locked');
-  var need='';
-  if(!open){need=u.need.biz!==undefined?'Own '+u.need.count+' '+businesses[u.need.biz].name:'Earn '+fmt(u.need.life)+' lifetime'}
-  card.innerHTML='<div class="cardIcon">'+u.icon+'</div><h3>'+u.name+'</h3><p>'+(open?u.desc:need)+'</p><div class="cost">'+(bought?'PURCHASED':fmt(u.cost))+'</div><button data-up="'+u.id+'" '+(bought||!open?'disabled':'')+'>'+(bought?'OWNED':'BUY UPGRADE')+'</button>';
-  box.appendChild(card);
- });
- box.querySelectorAll('[data-up]').forEach(function(b){b.onclick=function(){buyUpgrade(b.dataset.up)}});
-}
-function renderManagers(){
- var box=$('managerList');box.innerHTML='';
- businesses.forEach(function(b,i){
-  var s=state.biz[i],open=s.owned>0;
-  var card=document.createElement('div');card.className='card'+(s.manager?' bought':open?'':' locked');
-  card.innerHTML='<div class="cardIcon">'+b.icon+'</div><h3>'+b.manager+'</h3><p>'+(open?'Automatically runs '+b.name+' forever this empire.':'Buy '+b.name+' first to meet this manager.')+'</p><div class="cost">'+(s.manager?'HIRED':fmt(b.managerCost))+'</div><button class="managerBuy" data-mgr="'+i+'" '+(s.manager||!open?'disabled':'')+'>'+(s.manager?'AUTOMATED':'HIRE MANAGER')+'</button>';
-  box.appendChild(card);
- });
- box.querySelectorAll('[data-mgr]').forEach(function(b){b.onclick=function(){buyManager(+b.dataset.mgr)}});
-}
-function renderPrestige(){
- var gain=prestigeEntitled();
- $('prestigeGain').textContent='+'+gain+' Token'+(gain===1?'':'s');
- $('prestigeBtn').disabled=gain<1;
- $('prestigeBtn').textContent=gain<1?'Need more progress':'Sell Empire for +'+gain;
- var box=$('prestigeTree');box.innerHTML='';
- prestigeNodes.forEach(function(n){
-  var owned=hasNode(n.id),el=document.createElement('div');el.className='node'+(owned?' owned':'');
-  el.innerHTML='<strong>'+n.name+'</strong><p>'+n.desc+'</p><button data-node="'+n.id+'" '+(owned?'disabled':'')+'>'+(owned?'OWNED':'◆ '+n.cost+' TOKENS')+'</button>';
-  box.appendChild(el);
- });
- box.querySelectorAll('[data-node]').forEach(function(b){b.onclick=function(){buyNode(b.dataset.node)}});
-}
-function renderAchievements(){
- var box=$('achGrid');box.innerHTML='';
- achievements.forEach(function(a){
-  var got=state.achievements.indexOf(a.id)>=0,e=document.createElement('div');e.className='ach'+(got?' unlocked':'');
-  e.innerHTML='<div class="medal">'+(got?a.icon:'🔒')+'</div><strong>'+a.name+'</strong><span>'+a.text+'</span>';
+  var open=upgradeOpen(u),owned=hasUpgrade(u.id),need=u.global?"Earn "+fmt(u.life)+" lifetime":"Own "+u.need+" "+businesses[u.biz].name;
+  var e=document.createElement("div");e.className="card "+(owned?"ownedCard":open?"":"locked");
+  e.innerHTML='<div class="cardIcon">'+u.icon+'</div><h3>'+u.name+'</h3><p>'+(open?u.desc:need)+'</p><div class="price">'+(owned?"PURCHASED":fmt(u.cost))+'</div><button data-up="'+u.id+'" '+(owned||!open?"disabled":"")+'>'+(owned?"OWNED":"BUY UPGRADE")+'</button>';
   box.appendChild(e);
  });
+ box.querySelectorAll("[data-up]").forEach(function(b){b.onclick=function(){buyUpgrade(b.dataset.up)}});
+}
+function renderManagers(){
+ var box=$("managerCards");box.innerHTML="";
+ businesses.forEach(function(b,i){
+  var x=state.biz[i],open=x.owned>0,e=document.createElement("div");e.className="card "+(x.manager?"ownedCard":open?"":"locked");
+  e.innerHTML='<div class="cardIcon">'+b.icon+'</div><h3>'+b.manager+'</h3><p>'+(open?"Automatically runs "+b.name+" every "+b.cycle+" seconds.":"Buy "+b.name+" first.")+'</p><div class="price">'+(x.manager?"HIRED":fmt(b.managerCost))+'</div><button class="hire" data-manager="'+i+'" '+(x.manager||!open?"disabled":"")+'>'+(x.manager?"AUTOMATED":"HIRE")+'</button>';
+  box.appendChild(e);
+ });
+ box.querySelectorAll("[data-manager]").forEach(function(b){b.onclick=function(){hireManager(+b.dataset.manager)}});
+}
+function renderLegacy(){
+ var g=prestigeGain();$("prestigeGain").textContent="+"+g+" Token"+(g===1?"":"s");$("prestigeBtn").disabled=g<1;$("prestigeBtn").textContent=g<1?"Earn "+fmt(10000000-state.runEarned)+" more":"Sell Empire for +"+g;
+ var lg=$("legacyGrid");lg.innerHTML="";
+ legacy.forEach(function(n){var on=hasNode(n.id),e=document.createElement("div");e.className="legacy"+(on?" on":"");e.innerHTML="<strong>"+n.name+"</strong><p>"+n.desc+'</p><button data-legacy="'+n.id+'" '+(on?"disabled":"")+'>'+(on?"OWNED":"◆ "+n.cost+" TOKENS")+"</button>";lg.appendChild(e)});
+ lg.querySelectorAll("[data-legacy]").forEach(function(b){b.onclick=function(){buyLegacy(b.dataset.legacy)}});
+ var ac=$("achievements");ac.innerHTML="";
+ achievementDefs.forEach(function(a){var done=state.achievements.indexOf(a.id)>=0,e=document.createElement("div");e.className="ach"+(done?" done":"");e.innerHTML="<div>"+(done?a.icon:"🔒")+"</div><b>"+a.name+"</b><span>"+a.text+"</span>";ac.appendChild(e)});
+ renderStats();
 }
 function renderStats(){
- var hours=state.stats.playMs/3600000;
- var data=[
-  ['Lifetime cash',fmt(state.lifetimeCash)],['Current income',fmt(incomePerSec())+'/sec'],['Total units',num(totalOwned())],
-  ['Managers',managerCount()+' / 8'],['Normal upgrades',state.upgrades.length+' / '+upgrades.length],['Achievements',achievementCount()+' / '+achievements.length],
-  ['Prestiges',num(state.prestige.count)],['Lifetime tokens',num(state.prestige.lifetimeTokens)],['Events claimed',num(state.stats.events)],
-  ['Purchases',num(state.stats.purchases)],['Play time',hours<1?Math.floor(hours*60)+' min':hours.toFixed(1)+' hr'],['Save version','v'+VERSION]
+ var h=state.stats.playMs/3600000,data=[
+  ["Lifetime cash",fmt(state.lifetimeCash)],["Income/sec",fmt(ips())],["Prestiges",short(state.prestige.count)],
+  ["Lifetime tokens",short(state.prestige.lifetimeTokens)],["Events",short(state.stats.events)],["Play time",h<1?Math.floor(h*60)+" min":h.toFixed(1)+" hr"]
  ];
- var box=$('statsGrid');box.innerHTML='';
- data.forEach(function(x){var e=document.createElement('div');e.className='statLong';e.innerHTML='<span>'+x[0].toUpperCase()+'</span><strong>'+x[1]+'</strong>';box.appendChild(e)});
+ var box=$("stats");box.innerHTML="";data.forEach(function(x){var e=document.createElement("div");e.className="stat";e.innerHTML="<span>"+x[0].toUpperCase()+"</span><b>"+x[1]+"</b>";box.appendChild(e)});
 }
-function renderAll(){
- renderHud();renderBusinesses();renderUpgrades();renderManagers();renderPrestige();renderAchievements();renderStats();
-}
+function renderAll(){renderHud();renderBusinesses();renderUpgrades();renderManagers();renderLegacy()}
 
-document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){
- document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('active',x===b)});
- document.querySelectorAll('.tabPane').forEach(function(x){x.classList.toggle('active',x.id===b.dataset.tab)});
- if(b.dataset.tab==='stats')renderStats();
+document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
+ document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("active",x===b)});
+ document.querySelectorAll(".pane").forEach(function(x){x.classList.toggle("active",x.id===b.dataset.tab)});
+ if(b.dataset.tab==="legacy")renderLegacy();
 }});
-document.querySelectorAll('[data-buy]').forEach(function(b){b.onclick=function(){
- buyMode=b.dataset.buy;document.querySelectorAll('[data-buy]').forEach(function(x){x.classList.toggle('active',x===b)});renderBusinesses();
-}});
-$('eventBtn').onclick=claimEvent;
-$('prestigeBtn').onclick=doPrestige;
-$('offlineClaim').onclick=collectOffline;
-$('saveNow').onclick=function(){if(save())toast('Game saved')};
-$('exportSave').onclick=function(){
- var data=localStorage.getItem(SAVE_KEY)||JSON.stringify(state);
- if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(data).then(function(){toast('Save copied')},function(){prompt('Copy your save:',data)})}
- else prompt('Copy your save:',data);
-};
-$('importSave').onclick=function(){
- var str=prompt('Paste an Idle Empire save:');if(!str)return;
- try{var s=validate(JSON.parse(str));if(!s)throw new Error('bad');state=s;save();renderAll();toast('Save imported')}catch(e){alert('That save could not be loaded.')}
-};
-$('resetSave').onclick=function(){
- if(!confirm('Reset ALL Idle Empire progress? This cannot be undone.'))return;
- if(!confirm('Really erase the entire empire and start over?'))return;
- localStorage.removeItem(SAVE_KEY);localStorage.removeItem(BACKUP_KEY);state=freshState();save();renderAll();toast('Progress reset');
-};
-document.addEventListener('visibilitychange',function(){if(document.hidden)save();else{lastTick=Date.now()}});
-window.addEventListener('beforeunload',save);
-setInterval(save,15000);
+document.querySelectorAll("[data-buy]").forEach(function(b){b.onclick=function(){buyMode=b.dataset.buy;document.querySelectorAll("[data-buy]").forEach(function(x){x.classList.toggle("active",x===b)});renderBusinesses()}});
+$("eventBtn").onclick=claimEvent;$("prestigeBtn").onclick=prestige;$("offlineClaim").onclick=collectOffline;
+$("saveNow").onclick=function(){if(save())toast("Saved")};
+$("exportSave").onclick=function(){var data=JSON.stringify(state);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(data).then(function(){toast("Save copied")},function(){prompt("Copy save:",data)});else prompt("Copy save:",data)};
+$("importSave").onclick=function(){var s=prompt("Paste save:");if(!s)return;try{var v=validate(JSON.parse(s));if(!v)throw 0;state=v;save();renderAll();toast("Save imported")}catch(e){alert("That save could not be loaded.")}};
+$("resetSave").onclick=function(){if(!confirm("Reset ALL Idle Empire progress?"))return;if(!confirm("This cannot be undone. Really reset?"))return;localStorage.removeItem(SAVE_KEY);localStorage.removeItem(BACKUP_KEY);state=fresh();save();renderAll();toast("Progress reset")};
+document.addEventListener("visibilitychange",function(){if(document.hidden)save();else lastTick=Date.now()});
+window.addEventListener("beforeunload",save);
+setInterval(save,12000);
 
-fillWindows();
 var loaded=load();
+if(hasNode("startermgr"))state.biz[0].manager=true;
 if(loaded)offline();
-if(hasNode('startermgr'))state.biz[0].manager=true;
-checkAchievements();
-renderAll();
-lastTick=Date.now();
-requestAnimationFrame(tick);
+checkAchievements();renderAll();lastTick=Date.now();requestAnimationFrame(tick);
 })();
 </script>
 </body>
