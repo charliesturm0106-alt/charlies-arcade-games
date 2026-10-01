@@ -145,6 +145,6 @@ $('throw').addEventListener('pointerup',e=>{e.preventDefault();throwBall()});$('
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d',' '].includes(k))e.preventDefault();if(k==='w')keys.w=true;if(k==='a')keys.a=true;if(k==='s')keys.s=true;if(k==='d')keys.d=true;if(e.code==='Space'&&!e.repeat)beginCharge()});
 document.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='w')keys.w=false;if(k==='a')keys.a=false;if(k==='s')keys.s=false;if(k==='d')keys.d=false;if(e.code==='Space'){e.preventDefault();throwBall()}});
 $('start').onclick=start;window.addEventListener('blur',()=>{Object.keys(keys).forEach(k=>keys[k]=false);charging=false});
-hud();requestAnimationFrame(frame);
+newPlay();hud();requestAnimationFrame(frame);
 </script>
 </main></body></html>
