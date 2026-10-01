@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Charlie’s Arcade</title>
+  <title>Charlie’s Neon Arcade</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -11,13 +11,20 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: radial-gradient(circle at top, #222 0, #000 60%);
+      background: radial-gradient(circle at top, #001a33 0%, #000 60%);
       color: #fff;
       font-family: 'Press Start 2P', sans-serif;
       min-height: 100vh;
+      animation: bgMove 10s ease infinite;
+      background-size: 300% 300%;
     }
 
-    /* NAVBAR */
+    @keyframes bgMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     .navbar {
       background: #080808;
       padding: 15px 25px;
@@ -86,7 +93,6 @@
       color: #ccc;
     }
 
-    /* GAME GRID */
     .game-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -127,6 +133,7 @@
       justify-content: center;
       font-size: 10px;
       color: #0ff;
+      text-shadow: 0 0 6px #0ff;
     }
 
     .game-card h3 {
@@ -157,7 +164,6 @@
       filter: brightness(1.1);
     }
 
-    /* HIGH SCORES */
     .scores-panel {
       margin-top: 40px;
       padding: 15px;
@@ -195,7 +201,7 @@
 <body>
 
   <nav class="navbar">
-    <div class="logo">Charlie’s Arcade</div>
+    <div class="logo">Charlie’s Neon Arcade</div>
     <ul class="nav-links">
       <li><a href="#">Home</a></li>
       <li><a href="#games">Games</a></li>
@@ -207,14 +213,14 @@
   <div class="wrapper">
 
     <section class="hero">
-      <h1>Welcome to Charlie’s Arcade</h1>
-      <p>Pick a game. Beat the score. Become a legend.</p>
+      <h1>Welcome to Charlie’s Neon Arcade</h1>
+      <p>Pick a game. Beat the score. Glow harder.</p>
     </section>
 
-    <!-- GAME GRID -->
     <section id="games">
       <div class="game-grid">
 
+        <!-- Original Games -->
         <div class="game-card">
           <div class="game-thumb">SNAKE</div>
           <h3>Snake</h3>
@@ -232,7 +238,7 @@
         <div class="game-card">
           <div class="game-thumb">REACTION</div>
           <h3>Reaction Test</h3>
-          <p class="game-desc">How fast are you really.</p>
+          <p class="game-desc">How fast are you really?</p>
           <a href="reaction.html" class="play-btn">Play</a>
         </div>
 
@@ -257,13 +263,15 @@
           <a href="traffic.html" class="play-btn">Play</a>
         </div>
 
+        <!-- Neon Tetris -->
         <div class="game-card">
           <div class="game-thumb">TETRIS</div>
-          <h3>Tetris</h3>
-          <p class="game-desc">Stack the falling blocks.</p>
+          <h3>Neon Tetris</h3>
+          <p class="game-desc">Glow. Rotate. Clear lines.</p>
           <a href="tetris.html" class="play-btn">Play</a>
         </div>
 
+        <!-- Neon Dino -->
         <div class="game-card">
           <div class="game-thumb">DINO</div>
           <h3>Neon Dino Run</h3>
@@ -281,7 +289,6 @@
       </div>
     </section>
 
-    <!-- HIGH SCORES -->
     <section id="scores" class="scores-panel">
       <h2>High Scores</h2>
       <ul class="scores-list">
@@ -291,14 +298,14 @@
         <li>Breakout: <span id="hs-breakout">0</span></li>
         <li>Flappy Flight: <span id="hs-flappy">0</span></li>
         <li>Traffic Dodger: <span id="hs-traffic">0</span></li>
-        <li>Tetris: <span id="hs-tetris">0</span></li>
-        <li>Neon Dino: <span id="hs-dino">0</span></li>
+        <li>Neon Tetris: <span id="hs-tetris">0</span></li>
+        <li>Neon Dino Run: <span id="hs-dino">0</span></li>
         <li>Space Shooter: <span id="hs-space">0</span></li>
       </ul>
     </section>
 
     <section id="about" class="footer">
-      Charlie’s Arcade — built by Charlie, upgraded forever.
+      Charlie’s Neon Arcade — built by Charlie, upgraded forever.
     </section>
 
   </div>
