@@ -1,31 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#100d18">
-<title>Basketball Shootout · Charlie's Arcade</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#120d19"><title>Basketball Shootout · Charlie's Arcade</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#33214b,#100d18 60%);color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}
-main{width:min(100%,820px)}a{color:#d4c7e9;text-decoration:none;font-weight:800;font-size:14px}
-.head{margin:12px 0 14px}.head h1{font-size:32px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#a796b6;font-size:13px}
-.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}.box{background:#17121f;border:1px solid #342944;border-radius:14px;padding:10px 12px}.box span{display:block;color:#9b89ad;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:18px}
-.stage{position:relative;overflow:hidden;border:1px solid #453158;border-radius:22px;background:#d69a57;box-shadow:0 24px 70px #0008}
-canvas{display:block;width:100%;height:auto;touch-action:none}
-.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#100d18dc;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}
-.panel{width:min(100%,440px);padding:24px;background:#181321ef;border:1px solid #4a3861;border-radius:20px}.panel h2{font-size:29px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.58;color:#b8a9c6;margin:0 0 18px}
-.primary{width:100%;padding:13px;border:0;border-radius:13px;color:#fff;font-weight:900;background:linear-gradient(90deg,#ff7a35,#ffb33f)}
-.meterWrap{display:flex;align-items:center;gap:10px;margin-top:10px}.meterLabel{font-size:11px;font-weight:900;color:#9b89ad;min-width:84px}.meter{height:14px;flex:1;background:#211a2a;border:1px solid #4a385c;border-radius:999px;overflow:hidden;position:relative}.green{position:absolute;left:68%;width:12%;height:100%;background:#45e78655}.needle{position:absolute;top:0;bottom:0;width:5px;background:#fff;box-shadow:0 0 10px #fff}
-.controls{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:9px;margin-top:10px}.controls button{padding:14px 6px;border-radius:12px;border:1px solid #443653;background:#1a1423;color:#fff;font-weight:900;touch-action:none}.controls #shoot{background:linear-gradient(90deg,#f06f2f,#ffad32)}
-.status{text-align:center;color:#9583a7;font-size:12px;margin:11px 0 0;line-height:1.5}
-@media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.head h1{font-size:27px}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#3a2350,#120d19 62%);color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;display:flex;justify-content:center;padding:20px 14px}main{width:min(100%,820px)}a{color:#d7cae7;text-decoration:none;font-weight:800;font-size:14px}.head{margin:12px 0 14px}.head h1{font-size:32px;letter-spacing:-1px;margin:8px 0 3px}.sub{margin:0;color:#a997b8;font-size:13px}.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}.box{background:#181220;border:1px solid #3a2a48;border-radius:14px;padding:10px 12px}.box span{display:block;color:#9c89ad;font-size:10px;font-weight:900;letter-spacing:.7px}.box strong{font-size:18px}.stage{position:relative;overflow:hidden;border:1px solid #49345a;border-radius:22px;background:#c98646;box-shadow:0 24px 70px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#110d19df;backdrop-filter:blur(5px);padding:24px;text-align:center}.overlay[hidden]{display:none}.panel{width:min(100%,440px);padding:24px;background:#191321ef;border:1px solid #4d3960;border-radius:20px}.panel h2{font-size:29px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.58;color:#bbacc8;margin:0 0 18px}.primary{width:100%;padding:13px;border:0;border-radius:13px;color:#fff;font-weight:900;background:linear-gradient(90deg,#f56e2f,#ffb33d)}.meterWrap{display:flex;align-items:center;gap:10px;margin-top:10px}.meterLabel{font-size:11px;font-weight:900;color:#9d8aaf;min-width:78px}.meter{height:16px;flex:1;background:#211929;border:1px solid #4a385c;border-radius:999px;position:relative;overflow:hidden}.zone{position:absolute;left:70%;width:14%;height:100%;background:#3ce47d66}.perfect{position:absolute;left:75%;width:4%;height:100%;background:#3ce47d}.needle{position:absolute;top:0;bottom:0;width:5px;background:#fff;box-shadow:0 0 10px #fff}.controls{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:9px;margin-top:10px}.controls button{padding:15px 6px;border-radius:12px;border:1px solid #443653;background:#1b1424;color:#fff;font-weight:900;touch-action:none}.controls #shoot{background:linear-gradient(90deg,#f06e2f,#ffac32)}.status{text-align:center;color:#9583a7;font-size:12px;margin:11px 0 0;line-height:1.5}@media(max-width:620px){.hud{grid-template-columns:repeat(2,1fr)}.box:last-child{grid-column:span 2}.head h1{font-size:27px}}
 </style>
 </head>
-<body>
-<main>
+<body><main>
 <a href="index.html">← Back to Arcade</a>
-<div class="head"><h1>🏀 Basketball Shootout</h1><p class="sub">Find the green. Stack the streak.</p></div>
+<div class="head"><h1>🏀 Basketball Shootout</h1><p class="sub">Five spots. Three shots each. Green it.</p></div>
 <div class="hud">
 <div class="box"><span>SCORE</span><strong id="score">0</strong></div>
 <div class="box"><span>SHOTS</span><strong id="shots">0 / 15</strong></div>
@@ -33,145 +17,95 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 <div class="box"><span>SPOT</span><strong id="spot">1 / 5</strong></div>
 <div class="box"><span>BEST</span><strong id="best">0</strong></div>
 </div>
-<div class="stage">
-<canvas id="game" width="760" height="720"></canvas>
-<div class="overlay" id="overlay">
-<div class="panel">
+<div class="stage"><canvas id="game" width="760" height="720"></canvas><div class="overlay" id="overlay"><div class="panel">
 <h2 id="title">Basketball Shootout</h2>
-<p id="message">Take 15 shots from 5 spots. Hold <b>Space</b> or SHOOT to start the meter and release in the green. The hoop moves, so timing matters.</p>
+<p id="message">You take <b>3 shots from each of 5 spots</b>. Hold Space or SHOOT to move the release meter, then let go in the green. The tiny bright-green zone is a guaranteed perfect release.</p>
 <button class="primary" id="start">Start Shootout</button>
-</div>
-</div>
-</div>
-<div class="meterWrap"><span class="meterLabel">RELEASE</span><div class="meter"><div class="green"></div><div class="needle" id="needle"></div></div><strong id="releaseText">0%</strong></div>
-<div class="controls"><button id="left">◀ SPOT</button><button id="right">SPOT ▶</button><button id="shoot">HOLD TO SHOOT</button></div>
-<p class="status">A/D = change spot before a shot · Hold Space = start meter · Release in green</p>
-
+</div></div></div>
+<div class="meterWrap"><span class="meterLabel">RELEASE</span><div class="meter"><div class="zone"></div><div class="perfect"></div><div class="needle" id="needle"></div></div><strong id="releaseText">0%</strong></div>
+<div class="controls"><button id="left">◀ SPOT</button><button id="shoot">HOLD TO SHOOT</button><button id="right">SPOT ▶</button></div>
+<p class="status">A/D = choose spot before shooting · Hold Space = charge release · perfect green = automatic make</p>
 <script>
 const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height,$=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-let mode='ready',score=0,shots=0,streak=0,best=+(localStorage.getItem('basket_best')||0),spot=0,last=0;
-let charging=false,meter=.05,meterDir=1,ball=null,result='',resultTimer=0,hoopX=380,hoopDir=1,swish=false;
-const spots=[150,265,380,495,610];
+const spots=[145,260,380,500,615];
+let mode='ready',score=0,shots=0,streak=0,spot=0,shotAtSpot=0,best=Number(localStorage.getItem('basket_best')||0),last=0;
+let meter=.04,meterDir=1,charging=false,ball=null,result='',resultTimer=0,perfectRelease=false;
 
 function hud(){
- $('score').textContent=score;
- $('shots').textContent=shots+' / 15';
- $('streak').textContent=streak;
- $('spot').textContent=(spot+1)+' / 5';
- $('best').textContent=best;
- $('needle').style.left=(meter*100)+'%';
- $('releaseText').textContent=Math.round(meter*100)+'%';
+ $('score').textContent=score;$('shots').textContent=shots+' / 15';$('streak').textContent=streak;$('spot').textContent=(spot+1)+' / 5';$('best').textContent=best;
+ $('needle').style.left=(meter*100)+'%';$('releaseText').textContent=Math.round(meter*100)+'%';
 }
-function resetShot(){charging=false;meter=.05;meterDir=1;ball=null;result='';resultTimer=0;swish=false;hud()}
-function start(){
- mode='play';score=shots=streak=0;spot=0;hoopX=380;hoopDir=1;resetShot();$('overlay').hidden=true;last=performance.now();
-}
+function resetShot(){meter=.04;meterDir=1;charging=false;ball=null;result='';resultTimer=0;perfectRelease=false;hud()}
+function start(){mode='play';score=0;shots=0;streak=0;spot=0;shotAtSpot=0;resetShot();$('overlay').hidden=true;last=performance.now()}
 function finish(){
- mode='over';
- if(score>best){best=score;localStorage.setItem('basket_best',best)}
+ mode='over';if(score>best){best=score;localStorage.setItem('basket_best',String(best))}
  hud();$('title').textContent='Shootout Complete';$('message').textContent='Score: '+score+' · Best: '+best+'.';$('start').textContent='Play Again';$('overlay').hidden=false;
 }
-function beginCharge(){if(mode==='play'&&!ball&&!result)charging=true}
-function release(){
- if(mode!=='play'||!charging||ball||result)return;
- charging=false;shots++;
- const releaseQuality=1-clamp(Math.abs(meter-.74)/.28,0,1);
- const playerX=spots[spot];
- const distance=Math.abs(playerX-hoopX);
- const baseChance=.22+releaseQuality*.68-clamp(distance/900,0,.16);
- const made=Math.random()<clamp(baseChance,.06,.93);
- const targetX=made?hoopX+(Math.random()-.5)*7:hoopX+(Math.random()<.5?-1:1)*rand(26,62);
- const targetY=174+rand(-4,5);
- ball={sx:playerX,sy:610,x:playerX,y:610,tx:targetX,ty:targetY,t:0,made,quality:releaseQuality};
- hud();
-}
-function rand(a,b){return a+Math.random()*(b-a)}
 function changeSpot(dir){
- if(mode!=='play'||ball||result||charging)return;
- spot=clamp(spot+dir,0,4);hud();
+ if(mode!=='play'||charging||ball||result)return;
+ spot=clamp(spot+dir,0,4);shotAtSpot=0;hud();
+}
+function beginCharge(){if(mode==='play'&&!ball&&!result)charging=true}
+function releaseShot(){
+ if(mode!=='play'||!charging||ball||result)return;
+ charging=false;shots++;shotAtSpot++;
+ const error=Math.abs(meter-.77);
+ perfectRelease=error<=.02;
+ const made=perfectRelease||error<=.07||(error<=.12&&Math.random()<.72);
+ const px=spots[spot];
+ const hoopX=380;
+ const missSide=meter<.77?-1:1;
+ const tx=made?hoopX:hoopX+missSide*(38+Math.min(42,error*260));
+ ball={sx:px,sy:606,x:px,y:606,tx,ty:184,t:0,made};
+ hud();
 }
 function update(dt){
  if(mode!=='play')return;
- hoopX+=hoopDir*dt*(70+shots*2.3);
- if(hoopX>475){hoopX=475;hoopDir=-1}
- if(hoopX<285){hoopX=285;hoopDir=1}
-
  if(charging){
-  meter+=meterDir*dt*1.32;
+  meter+=meterDir*dt*1.25;
   if(meter>=1){meter=1;meterDir=-1}
   if(meter<=.03){meter=.03;meterDir=1}
   hud();
  }
-
  if(ball){
   ball.t+=dt*1.55;
   const t=clamp(ball.t,0,1);
-  const x=ball.sx+(ball.tx-ball.sx)*t;
-  const y=ball.sy+(ball.ty-ball.sy)*t-260*Math.sin(Math.PI*t);
-  ball.x=x;ball.y=y;
+  ball.x=ball.sx+(ball.tx-ball.sx)*t;
+  ball.y=ball.sy+(ball.ty-ball.sy)*t-255*Math.sin(Math.PI*t);
   if(t>=1){
-   const made=ball.made;
-   if(made){streak++;score+=2+(streak>=3?1:0);result='SWISH!';swish=true}
-   else{streak=0;result='MISS';swish=false}
-   resultTimer=.9;
-   ball=null;
-   if(shots%3===0&&shots<15)spot=Math.min(4,spot+1);
+   if(ball.made){
+    streak++;const bonus=streak>=3?1:0;score+=2+bonus;result=perfectRelease?'GREEN!':'BUCKET!';
+   }else{streak=0;result='MISS'}
+   ball=null;resultTimer=.8;
+   if(shotAtSpot>=3&&shots<15){spot=Math.min(4,spot+1);shotAtSpot=0}
    hud();
   }
  }
-
  if(result){
   resultTimer-=dt;
-  if(resultTimer<=0){
-   if(shots>=15)finish();
-   else resetShot();
-  }
+  if(resultTimer<=0){if(shots>=15)finish();else resetShot()}
  }
 }
 function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
 function draw(){
- ctx.fillStyle='#d59b5c';ctx.fillRect(0,0,W,H);
- ctx.fillStyle='#bd7d3f';ctx.fillRect(0,510,W,210);
- ctx.strokeStyle='#f3d3ad';ctx.lineWidth=4;
- ctx.beginPath();ctx.arc(W/2,510,165,Math.PI,0);ctx.stroke();
- ctx.beginPath();ctx.moveTo(90,510);ctx.lineTo(90,H);ctx.moveTo(W-90,510);ctx.lineTo(W-90,H);ctx.stroke();
- ctx.fillStyle='#f0f0f0';ctx.fillRect(hoopX-64,112,128,78);
- ctx.strokeStyle='#e5412f';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(hoopX-42,184);ctx.lineTo(hoopX+42,184);ctx.stroke();
- ctx.strokeStyle='#ddd';ctx.lineWidth=2;
- for(let i=-36;i<=36;i+=12){ctx.beginPath();ctx.moveTo(hoopX+i,188);ctx.lineTo(hoopX+i*.55,238);ctx.stroke()}
- ctx.beginPath();ctx.moveTo(hoopX-42,188);ctx.lineTo(hoopX-22,238);ctx.lineTo(hoopX+22,238);ctx.lineTo(hoopX+42,188);ctx.stroke();
-
- spots.forEach((x,i)=>{
-  ctx.fillStyle=i===spot?'#fff':'#f0d6b9';
-  ctx.beginPath();ctx.arc(x,610,10,0,Math.PI*2);ctx.fill();
- });
- const px=spots[spot];
- ctx.fillStyle='#233654';ctx.beginPath();ctx.roundRect(px-20,575,40,58,10);ctx.fill();
- circle(px,558,15,'#1a2435');
-
- if(ball){circle(ball.x,ball.y,13,'#f57b27');ctx.strokeStyle='#6b3416';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ball.x,ball.y,13,0,Math.PI*2);ctx.stroke()}
-
- if(result){
-  ctx.fillStyle='rgba(15,10,22,.55)';ctx.fillRect(0,0,W,H);
-  ctx.fillStyle=swish?'#68f0a0':'#ff7582';ctx.font='900 62px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2);ctx.textAlign='left';
- }
+ ctx.fillStyle='#cc8b4a';ctx.fillRect(0,0,W,H);ctx.fillStyle='#ba783d';ctx.fillRect(0,500,W,220);
+ ctx.strokeStyle='#efd1ad';ctx.lineWidth=4;ctx.beginPath();ctx.arc(380,505,155,Math.PI,0);ctx.stroke();
+ ctx.fillStyle='#f2f2f2';ctx.fillRect(316,100,128,82);
+ ctx.strokeStyle='#df3f2d';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(338,184);ctx.lineTo(422,184);ctx.stroke();
+ ctx.strokeStyle='#e8e8e8';ctx.lineWidth=2;for(let x=342;x<=418;x+=12){ctx.beginPath();ctx.moveTo(x,188);ctx.lineTo(380+(x-380)*.5,236);ctx.stroke()}
+ spots.forEach((x,i)=>{ctx.fillStyle=i===spot?'#fff':'#e8c7a4';ctx.beginPath();ctx.arc(x,620,10,0,Math.PI*2);ctx.fill()});
+ const px=spots[spot];circle(px,555,15,'#172235');ctx.fillStyle='#24569a';ctx.fillRect(px-19,571,38,46);
+ if(ball){circle(ball.x,ball.y,13,'#f27a26');ctx.strokeStyle='#6f3819';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ball.x,ball.y,13,0,Math.PI*2);ctx.stroke()}
+ if(result){ctx.fillStyle='rgba(16,9,22,.55)';ctx.fillRect(0,0,W,H);ctx.fillStyle=result==='GREEN!'?'#55ee8a':result==='MISS'?'#ff7180':'#fff';ctx.font='900 62px system-ui';ctx.textAlign='center';ctx.fillText(result,W/2,H/2);ctx.textAlign='left'}
 }
 function frame(now){const dt=Math.min((now-last)/1000,.033);last=now;update(dt);draw();requestAnimationFrame(frame)}
-$('start').onclick=start;
-$('left').onclick=()=>changeSpot(-1);$('right').onclick=()=>changeSpot(1);
-$('shoot').addEventListener('pointerdown',e=>{e.preventDefault();$('shoot').setPointerCapture(e.pointerId);beginCharge()});
-['pointerup','pointercancel','lostpointercapture'].forEach(ev=>$('shoot').addEventListener(ev,release));
-document.addEventListener('keydown',e=>{
- const k=e.key.toLowerCase();
- if([' ','a','d','arrowleft','arrowright'].includes(k))e.preventDefault();
- if((k==='a'||k==='arrowleft')&&!e.repeat)changeSpot(-1);
- if((k==='d'||k==='arrowright')&&!e.repeat)changeSpot(1);
- if(e.code==='Space'&&!e.repeat)beginCharge();
-});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release()}});
+$('start').onclick=start;$('left').onclick=()=>changeSpot(-1);$('right').onclick=()=>changeSpot(1);
+$('shoot').addEventListener('pointerdown',e=>{e.preventDefault();if($('shoot').setPointerCapture)$('shoot').setPointerCapture(e.pointerId);beginCharge()});
+$('shoot').addEventListener('pointerup',e=>{e.preventDefault();releaseShot()});
+$('shoot').addEventListener('pointercancel',()=>{charging=false});
+document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if([' ','a','d','arrowleft','arrowright'].includes(k))e.preventDefault();if((k==='a'||k==='arrowleft')&&!e.repeat)changeSpot(-1);if((k==='d'||k==='arrowright')&&!e.repeat)changeSpot(1);if(e.code==='Space'&&!e.repeat)beginCharge()});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();releaseShot()}});
 hud();requestAnimationFrame(frame);
 </script>
-</main>
-</body>
-</html>
+</main></body></html>
