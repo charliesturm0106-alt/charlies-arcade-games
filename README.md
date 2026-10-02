@@ -1,11 +1,17 @@
 # charlies-arcade-games
 
+## 🎮 Play Arcade City
+
+[**PLAY ARCADE CITY 3D**](https://charliesturm0106-alt.github.io/charlies-arcade-games/arcade-city.html?v=2.1.8)
+
+That link goes straight into Arcade City 3D. Choose **OPEN WORLD** to join the public city or **SOLO** to play by yourself.
+
 Charlie's Arcade and Arcade City 3D.
 
 ## Multiplayer server
 
-Arcade City uses the Node.js server in `server.js` for Open World multiplayer.
+Arcade City Open World uses:
 
-[Deploy the multiplayer server to Render](https://render.com/deploy?repo=https://github.com/charliesturm0106-alt/charlies-arcade-games)
+https://charlies-arcade-games.onrender.com/
 
-The included `render.yaml` creates a Node web service with `/health` checks.
+The Node.js multiplayer server is in `server.js` and is deployed through Render using `render.yaml`.
