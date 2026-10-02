@@ -13,7 +13,7 @@ const PUBLIC_PREFIX = 'CITY';
 const WORLD_LIMIT = 500;
 const rooms = new Map();
 const sessions = new Map();
-const VERSION = '2.1.0';
+const VERSION = '2.1.1';
 
 const app = express();
 app.disable('x-powered-by');
@@ -51,6 +51,34 @@ app.post('/mp/exchange', (req, res) => {
   const messages = peer.queue.splice(0);
   if (peer.roomCode) messages.push({ type: 'snapshot', players: roomPlayers(peer.roomCode) });
   res.json({ messages });
+});
+// Script transport for iPad/iOS browsers. Cross-origin <script> loads do not require CORS.
+app.get('/mp/jsonp', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.type('application/javascript');
+  const token = String(req.query.token || '');
+  const reply = payload => {
+    const safe = JSON.stringify({ token, ...payload })
+      .replace(/</g, '\\u003c')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+    res.send('window.__arcadeMpReceive&&window.__arcadeMpReceive(' + safe + ');');
+  };
+  if (!validToken(token)) return reply({ error: 'Invalid session.' });
+  const peer = getPeer(token);
+  if (!peer) return reply({ error: 'Server busy. Try again.' });
+  peer.lastSeen = Date.now();
+  let message = null;
+  if (req.query.message) {
+    try { message = JSON.parse(String(req.query.message)); } catch (_) { return reply({ error: 'Bad message.' }); }
+  }
+  if (message) receive(peer, message);
+  if (!peer.roomCode && (!message || message.type === 'state')) {
+    send(peer, { type: 'error', message: 'World connection expired. Join again.' });
+  }
+  const messages = peer.queue.splice(0);
+  if (peer.roomCode) messages.push({ type: 'snapshot', players: roomPlayers(peer.roomCode) });
+  reply({ messages });
 });
 // Serve only public game assets, never server source or dependencies.
 app.use((req, res, next) => {
