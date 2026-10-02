@@ -51,14 +51,14 @@ function action(){
 }
 function kickFieldGoal(){
  const s=state,d=cfg();if(s.kick||s.result)return;const dist=s.distance,need=clamp(.45+(dist-28)*.0095,.45,.86),accuracy=Math.abs(s.aim+s.wind*.038),powerErr=Math.abs(s.power-need),aimWindow=.20*d.window,powerWindow=.18*d.window,made=accuracy<aimWindow&&powerErr<powerWindow;
- s.kicks++;if(made){s.makes++;s.streak++;score+=Math.round((115+dist*2.6+s.streak*18)*d.reward);beep(820);s.result=s.streak>=3?'CLUTCH!':'GOOD!'}else{s.streak=0;beep(210);s.result=powerErr>powerWindow?'POWER MISS':'WIDE'}
+ s.kicks++;if(made){s.makes++;s.streak++;score+=Math.round((115+dist*2.6+s.streak*18)*d.reward);beep(820);window.NDPolish?.flash();s.result=s.streak>=3?'CLUTCH!':'GOOD!'}else{s.streak=0;beep(210);window.NDPolish?.shake();s.result=powerErr>powerWindow?'POWER MISS':'WIDE'}
  s.kick={t:0,made,startX:W/2,startY:505,targetX:W/2+s.aim*132+s.wind*2.25,targetY:155};s.resultT=1.05
 }
 function dropBlock(){
  const s=state,d=cfg(),m=s.moving,base=s.blocks[s.blocks.length-1],left=Math.max(m.x,base.x),right=Math.min(m.x+m.w,base.x+base.w),overlap=right-left;
- if(overlap<=0){finish('Tower Fell','You stacked '+s.level+' blocks');return}
+ if(overlap<=0){window.NDPolish?.shake();finish('Tower Fell','You stacked '+s.level+' blocks');return}
  const threshold=Math.max(1.7,4*d.window),perfect=Math.abs((m.x+m.w/2)-(base.x+base.w/2))<threshold,w=perfect?base.w:overlap,x=perfect?base.x:left;
- s.blocks.push({x,y:m.y,w,h:m.h});s.level++;score=Math.round((s.level*110+s.combo*28)*d.reward);if(perfect){s.combo++;toast('PERFECT ×'+s.combo);beep(880)}else{s.combo=0;beep(520)}
+ s.blocks.push({x,y:m.y,w,h:m.h});s.level++;score=Math.round((s.level*110+s.combo*28)*d.reward);if(perfect){s.combo++;toast('PERFECT ×'+s.combo);beep(880);window.NDPolish?.flash()}else{s.combo=0;beep(520)}
  const speed=Math.min(390,(150+s.level*14+difficulty*22))*d.speed,dir=s.level%2?1:-1;s.moving={x:dir>0?0:W-w,y:m.y-28,w,h:28,vx:speed*dir};s.windT=Math.max(.9,2.5-s.level*.04)
  if(s.moving.y<190){for(const b of s.blocks)b.y+=28;s.moving.y+=28}
 }
@@ -78,20 +78,20 @@ function updateGolf(dt){
   const inSand=h.sand.some(o=>pointInRect(b.x,b.y,o)),drag=Math.pow(inSand?.955:.986-difficulty*.0015,dt*60);b.vx*=drag;b.vy*=drag;let sp=Math.hypot(b.vx,b.vy);const cupDx=h.cup[0]-b.x,cupDy=h.cup[1]-b.y,cupDist=Math.hypot(cupDx,cupDy),cupR=18-difficulty*.75,catchR=cupR+13;
   if(cupDist<catchR&&sp<240&&cupDist>1){const pull=(1-cupDist/catchR)*(170-difficulty*8);b.vx+=cupDx/cupDist*pull*dt;b.vy+=cupDy/cupDist*pull*dt;b.vx*=Math.pow(.92,dt*60);b.vy*=Math.pow(.92,dt*60);sp=Math.hypot(b.vx,b.vy)}
   const crossedCup=cupDist<cupR&&sp<310;
-  if(crossedCup){b.x=h.cup[0];b.y=h.cup[1];b.vx=b.vy=0;score+=Math.round((1050-s.strokes*120+h.par*55)*d.reward);s.totalStrokes+=s.strokes;s.hole++;beep(900,.09);if(s.hole>=s.holes.length){score+=Math.max(0,2500-s.totalStrokes*70);finish('Course Complete','Total strokes: '+s.totalStrokes);return}loadHole();toast('SUNK! · HOLE '+(s.hole+1))}
+  if(crossedCup){b.x=h.cup[0];b.y=h.cup[1];b.vx=b.vy=0;window.NDPolish?.flash();score+=Math.round((1050-s.strokes*120+h.par*55)*d.reward);s.totalStrokes+=s.strokes;s.hole++;beep(900,.09);if(s.hole>=s.holes.length){score+=Math.max(0,2500-s.totalStrokes*70);finish('Course Complete','Total strokes: '+s.totalStrokes);return}loadHole();toast('SUNK! · HOLE '+(s.hole+1))}
   else if(sp<6){b.vx=b.vy=0;s.settled=true}
  }
 }
 function updateTurbo(dt){
  const s=state,d=cfg();s.time-=dt;if(s.time<=0){score+=Math.round(s.passed*30*d.reward);finish('Time!','You cleared '+s.passed+' gates');return}s.boost=Math.max(0,s.boost-dt);s.heat=Math.max(0,s.heat-dt*8);const steer=((keys.right?1:0)-(keys.left?1:0))*285;s.x=clamp(s.x+steer*dt,52,W-52);const sp=(s.speed+Math.min(155,s.passed*4.3))*(s.boost?1.26:1);s.road=(s.road+sp*dt)%70;s.spawn-=dt;if(s.spawn<=0){const width=Math.max(62,124-s.passed*.8-difficulty*10);s.gates.push({y:-35,c:82+Math.random()*(W-164),w:width,checked:false});if(Math.random()<.35+difficulty*.1)s.hazards.push({x:60+Math.random()*(W-120),y:-90,w:24+Math.random()*15,h:32,vy:sp*(.82+Math.random()*.18)});s.spawn=Math.max(.62,.94-difficulty*.08)+Math.random()*.18}
- for(const h of s.hazards){h.y+=h.vy*dt;if(Math.abs(s.x-h.x)<(h.w/2+16)&&Math.abs(525-h.y)<36){h.dead=true;s.time=Math.max(0,s.time-(2+difficulty));s.combo=0;s.heat=100;toast('-'+(2+difficulty)+' SEC');beep(160)}}
+ for(const h of s.hazards){h.y+=h.vy*dt;if(Math.abs(s.x-h.x)<(h.w/2+16)&&Math.abs(525-h.y)<36){h.dead=true;s.time=Math.max(0,s.time-(2+difficulty));s.combo=0;s.heat=100;toast('-'+(2+difficulty)+' SEC');beep(160);window.NDPolish?.shake()}}
  for(const g of s.gates){g.y+=sp*dt;if(!g.checked&&g.y>492){g.checked=true;if(Math.abs(s.x-g.c)<g.w/2-17){s.passed++;s.combo++;score+=Math.round((60+s.combo*12)*d.reward);s.nitro=Math.min(100,s.nitro+15+difficulty*2);beep(620)}else{s.combo=0;s.time=Math.max(0,s.time-(2+difficulty*.5));toast('MISSED GATE');beep(190)}}}s.gates=s.gates.filter(g=>g.y<H+55);s.hazards=s.hazards.filter(h=>!h.dead&&h.y<H+55)
 }
 function updateMeteor(dt){
  const s=state,d=cfg();s.time+=dt;s.shield=Math.max(0,s.shield-dt);s.flash=Math.max(0,s.flash-dt);score+=dt*(8+s.combo*.35)*d.reward;const steer=((keys.right?1:0)-(keys.left?1:0))*310;s.x=clamp(s.x+steer*dt,26,W-26);s.spawn-=dt;
  if(s.spawn<=0){const r=10+Math.random()*18,type=Math.random()<(difficulty*.09+.08)?'hunter':Math.random()<.18?'fast':'rock';s.meteors.push({x:r+Math.random()*(W-r*2),y:-35,r,vy:(150+Math.min(260,s.time*4.5)+Math.random()*80)*d.speed,vx:(Math.random()-.5)*42,type});s.spawn=Math.max(.12,.61/d.pressure-s.time*.0038)}
  s.orbSpawn-=dt;if(s.orbSpawn<=0){s.orbs.push({x:35+Math.random()*(W-70),y:-20,r:9});s.orbSpawn=2.8+difficulty*.45+Math.random()*2.5}
- for(const m of s.meteors){if(m.type==='hunter')m.vx+=Math.sign(s.x-m.x)*22*dt*d.pressure;m.x+=m.vx*dt;m.y+=m.vy*dt*(m.type==='fast'?1.28:1);if(Math.hypot(m.x-s.x,m.y-s.y)<m.r+17){m.dead=true;if(s.shield){score+=40;s.combo++;beep(700)}else if(s.lives>1){s.lives--;s.flash=.7;toast('HIT · 1 LIFE LEFT');beep(170)}else{finish('Impact!','You survived '+s.time.toFixed(1)+' seconds');return}}else if(!m.passed&&m.y>s.y+35){m.passed=true;s.combo++;score+=14*d.reward}}
+ for(const m of s.meteors){if(m.type==='hunter')m.vx+=Math.sign(s.x-m.x)*22*dt*d.pressure;m.x+=m.vx*dt;m.y+=m.vy*dt*(m.type==='fast'?1.28:1);if(Math.hypot(m.x-s.x,m.y-s.y)<m.r+17){m.dead=true;if(s.shield){score+=40;s.combo++;beep(700);window.NDPolish?.flash()}else if(s.lives>1){s.lives--;s.flash=.7;toast('HIT · 1 LIFE LEFT');beep(170);window.NDPolish?.shake()}else{window.NDPolish?.shake();finish('Impact!','You survived '+s.time.toFixed(1)+' seconds');return}}else if(!m.passed&&m.y>s.y+35){m.passed=true;s.combo++;score+=14*d.reward}}
  for(const o of s.orbs){o.y+=(170+Math.min(120,s.time*2.2))*dt;if(Math.hypot(o.x-s.x,o.y-s.y)<27){o.dead=true;s.energy=Math.min(100,s.energy+30);score+=28;beep(760)}}s.meteors=s.meteors.filter(m=>!m.dead&&m.y<H+55);s.orbs=s.orbs.filter(o=>!o.dead&&o.y<H+35)
 }
 function updateStack(dt){const s=state,d=cfg();s.windT-=dt;if(s.windT<=0){s.windT=1.2+Math.random()*1.8;s.wind=(Math.random()-.5)*(18+difficulty*11)}s.moving.vx+=s.wind*dt;s.moving.vx=clamp(s.moving.vx,-420*d.speed,420*d.speed);s.moving.x+=s.moving.vx*dt;if(s.moving.x<0){s.moving.x=0;s.moving.vx=Math.abs(s.moving.vx)}if(s.moving.x+s.moving.w>W){s.moving.x=W-s.moving.w;s.moving.vx=-Math.abs(s.moving.vx)}}
