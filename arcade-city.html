@@ -389,23 +389,96 @@ function addExpandedDistricts(){
  addNeonSign(-610,12,-475,26,4,0xffb34d);addNeonSign(520,16,-535,30,4,0x7cff9b);addNeonSign(-520,18,535,28,4,0xb67cff);
 }
 addExpandedDistricts();
-function addEnterableHouse(x,z,rot,label){
- const g=new THREE.Group(),wall=new THREE.MeshStandardMaterial({color:0x8a765f,roughness:.94}),roof=new THREE.MeshStandardMaterial({color:0x4d3f38,roughness:.98}),doorMat=new THREE.MeshStandardMaterial({color:0x33251e,roughness:.9});
- const body=new THREE.Mesh(new THREE.BoxGeometry(15,6.5,12),wall);body.position.y=3.25;g.add(body);
- const r=new THREE.Mesh(new THREE.ConeGeometry(11,4.2,4),roof);r.rotation.y=Math.PI/4;r.position.y=8.4;g.add(r);
- const door=new THREE.Mesh(new THREE.BoxGeometry(2.1,3.5,.35),doorMat);door.position.set(0,1.75,6.15);g.add(door);
- const porch=new THREE.Mesh(new THREE.BoxGeometry(5,.45,2.6),new THREE.MeshStandardMaterial({color:0x6b6258,roughness:.95}));porch.position.set(0,.2,7.2);g.add(porch);
- g.position.set(x,0,z);g.rotation.y=rot;city.add(g);
- colliders.push({x,z,hw:8.5,hd:7});
- const fx=Math.sin(rot),fz=Math.cos(rot),doorX=x+fx*8.8,doorZ=z+fz*8.8;
- addMarker(doorX,doorZ,0xffc780,label,'house',{houseX:x,houseZ:z})
+const walkInBuildings=[],walkInActions=[],walkInCarBlocks=[];
+function walkInContaining(x,z){return walkInBuildings.find(b=>Math.abs(x-b.x)<b.hw&&Math.abs(z-b.z)<b.hd)||null}
+function addWalkWall(group,lx,lz,w,d,h,mat,wx,wz){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(lx,h/2,lz);m.castShadow=!PERF_MOBILE;m.receiveShadow=true;group.add(m);
+ colliders.push({x:wx,z:wz,hw:w/2+.12,hd:d/2+.12});return m
 }
-addEnterableHouse(505,665,Math.PI,'PINE HOUSE 1');
-addEnterableHouse(565,675,Math.PI,'PINE HOUSE 2');
-addEnterableHouse(625,665,Math.PI,'PINE HOUSE 3');
-addEnterableHouse(-535,650,Math.PI,'RIDGE HOUSE');
-addEnterableHouse(-610,-680,0,'SOUTH COUNTY HOUSE');
-addEnterableHouse(610,-700,0,'COAST HOUSE');
+function addWalkInBuilding(o){
+ const {id,label,x,z,w=18,d=16,h=5.8,doorSide='south',kind='house',price=0,serviceType=null,color=0x786958,accent=0x5fe3ff}=o,doorW=4.1,group=new THREE.Group();
+ group.position.set(x,0,z);city.add(group);
+ const floorMat=new THREE.MeshStandardMaterial({color:kind==='house'?0x625546:0x303844,roughness:.94}),wallMat=new THREE.MeshStandardMaterial({color,roughness:.9,transparent:true,opacity:1}),roofMat2=new THREE.MeshStandardMaterial({color:0x343a42,roughness:.92,transparent:true,opacity:.96}),accentMat=new THREE.MeshStandardMaterial({color:accent,emissive:accent,emissiveIntensity:.55,roughness:.45});
+ const floor=new THREE.Mesh(new THREE.BoxGeometry(w-.5,.18,d-.5),floorMat);floor.position.y=.02;floor.receiveShadow=true;group.add(floor);
+ const walls=[];
+ walls.push(addWalkWall(group,-w/2+.18,0,.36,d,h,wallMat,x-w/2+.18,z));
+ walls.push(addWalkWall(group,w/2-.18,0,.36,d,h,wallMat,x+w/2-.18,z));
+ const frontSouth=doorSide==='south',frontZ=(frontSouth?d/2:-d/2)-.18,backZ=(frontSouth?-d/2:d/2)+.18,seg=(w-doorW)/2;
+ walls.push(addWalkWall(group,0,backZ,w,.36,h,wallMat,x,z+backZ));
+ for(const side of [-1,1]){
+   const cx=side*(doorW/2+seg/2);
+   walls.push(addWalkWall(group,cx,frontZ,seg,.36,h,wallMat,x+cx,z+frontZ))
+ }
+ const lintel=new THREE.Mesh(new THREE.BoxGeometry(doorW,1.25,.36),wallMat);lintel.position.set(0,h-.625,frontZ);group.add(lintel);
+ const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.45,.32,d+.45),roofMat2);roof.position.y=h+.18;group.add(roof);
+ const sign=new THREE.Mesh(new THREE.BoxGeometry(Math.min(w*.58,9),.85,.32),accentMat);sign.position.set(0,h-.85,frontZ+(frontSouth?.22:-.22));group.add(sign);
+ const doorSign=frontSouth?1:-1,insideZ=z+doorSign*(d/2-3.15),counterZ=z-doorSign*(d/2-2.65),driveZ=z+doorSign*(d/2+5.8);
+ if(kind==='house'){
+   const couchMat=new THREE.MeshStandardMaterial({color:0x566f82,roughness:.92}),wood=new THREE.MeshStandardMaterial({color:0x68482f,roughness:.95}),bedMat=new THREE.MeshStandardMaterial({color:0xd5d9dd,roughness:.98});
+   const couch=new THREE.Mesh(new THREE.BoxGeometry(4.6,1.05,1.9),couchMat);couch.position.set(-w*.2,.58,0);group.add(couch);
+   const back=new THREE.Mesh(new THREE.BoxGeometry(4.6,1.45,.5),couchMat);back.position.set(-w*.2,1.2,-.78);group.add(back);
+   const table=new THREE.Mesh(new THREE.BoxGeometry(2.7,.38,1.8),wood);table.position.set(w*.2,.72,.4);group.add(table);
+   const bed=new THREE.Mesh(new THREE.BoxGeometry(3.5,.72,5),bedMat);bed.position.set(w*.23,.42,-doorSign*(d*.22));group.add(bed);
+   const kitchen=new THREE.Mesh(new THREE.BoxGeometry(5,1.2,1.15),new THREE.MeshStandardMaterial({color:0x444d55,roughness:.88}));kitchen.position.set(-w*.18,.6,-doorSign*(d*.34));group.add(kitchen);
+ }else{
+   const counter=new THREE.Mesh(new THREE.BoxGeometry(w*.6,1.25,1.35),new THREE.MeshStandardMaterial({color:0x25303b,roughness:.78}));counter.position.set(0,.64,(counterZ-z));group.add(counter);
+   const strip=new THREE.Mesh(new THREE.BoxGeometry(w*.48,.16,.18),accentMat);strip.position.set(0,1.28,(counterZ-z)+doorSign*.72);group.add(strip);
+   for(const side of [-1,1]){const shelf=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.4,4.6),new THREE.MeshStandardMaterial({color:0x1d2732,roughness:.88}));shelf.position.set(side*(w/2-2.1),1.2,0);group.add(shelf)}
+ }
+ const propertySignMat=new THREE.MeshStandardMaterial({color:0xffc85e,emissive:0xa86515,emissiveIntensity:.45,roughness:.7});
+ let propertySign=null;
+ if(kind==='house'){
+   propertySign=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.3,.18),propertySignMat);propertySign.position.set(w/2-2.1,1.05,doorSign*(d/2-1.2));group.add(propertySign);
+   walkInActions.push({type:'property',id,label,price,x:x+w/2-2.1,z:z+doorSign*(d/2-1.2),driveX:x,driveZ,signMat:propertySignMat})
+ }
+ if(serviceType)walkInActions.push({type:'service',serviceType,label,x,z:counterZ});
+ const b={id,label,x,z,hw:w/2-.35,hd:d/2-.35,roof,walls,kind,propertySign,propertySignMat};walkInBuildings.push(b);walkInCarBlocks.push({x,z,hw:w/2+.7,hd:d/2+.7});
+ return b
+}
+function propertyOwned(id){return state.properties.includes(id)}
+function useProperty(a){
+ if(!propertyOwned(a.id)){
+   if(state.money<a.price)return popup('Need $'+a.price.toLocaleString()+' to buy '+a.label);
+   state.money-=a.price;state.properties.push(a.id);state.homeProperty=a.id;state.homeSpawn={x:a.driveX,z:a.driveZ};state.totalEarned=Math.max(0,state.totalEarned);save();sfx('reward');popup('🏠 HOUSE BOUGHT · '+a.label+' · HOME SET');return
+ }
+ state.homeProperty=a.id;state.homeSpawn={x:a.driveX,z:a.driveZ};save();sfx('click');popup('🏠 HOME BASE SET · '+a.label)
+}
+function updateWalkInBuildings(){
+ if(travelMode!=='foot'){for(const b of walkInBuildings){b.roof.material.opacity=.96;b.walls.forEach(w=>w.material.opacity=1)}return}
+ const inside=walkInContaining(character.pos.x,character.pos.z);
+ for(const b of walkInBuildings){const active=b===inside;b.roof.material.opacity=active?.06:.96;b.walls.forEach(w=>w.material.opacity=active?.52:1)}
+ for(const a of walkInActions)if(a.type==='property'&&a.signMat){const owned=propertyOwned(a.id);a.signMat.color.setHex(owned?0x58e39b:0xffc85e);a.signMat.emissive.setHex(owned?0x1b8f58:0xa86515)}
+}
+function buildSeamlessNeighborhoods(){
+ // North residential/commercial street connects directly to the scenic highway.
+ addRoadSegment(610,585,610,650,18,0x252c32);addRoadSegment(420,650,760,650,18,0x252c32);
+ const northHomes=[
+  ['pine1','PINE HOUSE 1',450,684,12000],['pine2','PINE HOUSE 2',495,684,18000],['pine3','PINE HOUSE 3',540,684,24000],
+  ['pine4','PINE HOUSE 4',585,684,32000],['pine5','PINE HOUSE 5',630,684,42000],['pine6','PINE HOUSE 6',675,684,56000],['pine7','PINE HOUSE 7',720,684,75000]
+ ];
+ for(const [id,label,x,z,price] of northHomes)addWalkInBuilding({id,label,x,z,w:18,d:17,doorSide:'north',kind:'house',price,color:0x806f5d,accent:0xffc780});
+ const northShops=[
+  ['garage31','GARAGE 31',450,616,'garage',0x30485b,0x58e39b],['neonmotors','NEON MOTORS',505,616,'dealer',0x45345d,0xa57cff],
+  ['quickfix','QUICK FIX',560,616,'repair',0x30443a,0x55e49a],['northfuel','NORTH FUEL',615,616,'gas',0x49412e,0x65b8ff],
+  ['cleanride','CLEAN RIDE',670,616,'wash',0x29475b,0x7bd9ff],['raceclub','RACE CLUB',725,616,'meet',0x4b2d43,0xff66b5]
+ ];
+ for(const [id,label,x,z,serviceType,color,accent] of northShops)addWalkInBuilding({id,label,x,z,w:22,d:18,doorSide:'south',kind:'shop',serviceType,color,accent});
+ // South County gets a second real neighborhood.
+ addRoadSegment(-640,-585,-640,-650,18,0x292d31);addRoadSegment(-790,-650,-420,-650,18,0x292d31);
+ const southHomes=[
+  ['county1','COUNTY HOUSE 1',-760,-684,10000],['county2','COUNTY HOUSE 2',-710,-684,14500],['county3','COUNTY HOUSE 3',-660,-684,21000],
+  ['county4','COUNTY HOUSE 4',-610,-684,28500],['county5','COUNTY HOUSE 5',-560,-684,38000],['county6','COUNTY HOUSE 6',-510,-684,50000],['county7','COUNTY HOUSE 7',-460,-684,68000]
+ ];
+ for(const [id,label,x,z,price] of southHomes)addWalkInBuilding({id,label,x,z,w:19,d:17,doorSide:'south',kind:'house',price,color:0x7d6953,accent:0xffb968});
+ const southShops=[
+  ['countygarage','COUNTY GARAGE',-750,-616,'garage',0x374550,0x58e39b],['countyrepair','COUNTY REPAIR',-680,-616,'repair',0x344339,0x55e49a],
+  ['desertfuel','DESERT FUEL',-610,-616,'gas',0x4a3d2d,0x65b8ff],['southmotors','SOUTH MOTORS',-540,-616,'dealer2',0x49365d,0xa57cff]
+ ];
+ for(const [id,label,x,z,serviceType,color,accent] of southShops)addWalkInBuilding({id,label,x,z,w:24,d:18,doorSide:'north',kind:'shop',serviceType,color,accent});
+ addWalkInBuilding({id:'neonmart',label:'NEON MART',-470,-616,w:22,d:18,doorSide:'north',kind:'shop',color:0x395246,accent:0x75f1a8});
+ addWalkInBuilding({id:'coastcafe',label:'COAST CAFE',755,-80,w:22,d:18,doorSide:'south',kind:'shop',color:0x5b4637,accent:0xffba78});
+}
+buildSeamlessNeighborhoods();
 
 const signTextureCache=new Map();
 function makeSignTexture(text,bg='#1c6a43',fg='#ffffff'){
