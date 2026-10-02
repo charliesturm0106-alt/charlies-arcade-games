@@ -1,4 +1,4 @@
-# charlies-arcade-games
+# Neon District
 
 ## 🎮 Play Arcade City
 
@@ -6,7 +6,7 @@
 
 That link goes straight into Arcade City 3D. Choose **OPEN WORLD** to join the public city or **SOLO** to play by yourself.
 
-Charlie's Arcade and Arcade City 3D.
+Neon District and Arcade City 3D.
 
 ## Multiplayer server
 
