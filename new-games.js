@@ -22,7 +22,7 @@ function reset(){
 }
 function start(){reset();mode='playing';$('overlay').hidden=true;$('pause').disabled=false;$('pause').textContent='Pause';last=performance.now()}
 function finish(won=false){
- mode='over';clearKeys();if(score>best){best=score;localStorage.setItem('hs_'+kind,best)}
+ mode='over';clearKeys();won?window.NDPolish?.flash():window.NDPolish?.shake();if(score>best){best=score;localStorage.setItem('hs_'+kind,best)}
  $('overlay').hidden=false;$('message').textContent=won?'You cleared the run!':'Game over';$('detail').textContent='Final score: '+score+' · Best: '+best;$('start').textContent='Play again';$('pause').disabled=true;hud()
 }
 function pause(){if(!['playing','paused'].includes(mode))return;mode=mode==='playing'?'paused':'playing';clearKeys();$('pause').textContent=mode==='paused'?'Resume':'Pause';$('overlay').hidden=mode!=='paused';if(mode==='paused'){$('message').textContent='Paused';$('detail').textContent='Ready when you are.';$('start').textContent='Resume'}last=performance.now()}
@@ -34,8 +34,8 @@ function update(dt){
   if(s.bx<8||s.bx>392){s.bx=clamp(s.bx,8,392);s.vx*=-1}if(s.by<8){s.by=8;s.vy=Math.abs(s.vy)}
   if(s.vy>0&&oldY+8<=490&&s.by+8>=490&&s.bx+8>=s.x&&s.bx-8<=s.x+90){s.by=482;const angle=(s.bx-(s.x+45))/45;s.vx=angle*(235+s.level*9);s.vy=-Math.sqrt(Math.max(26000,(325+s.level*12)*(325+s.level*12)-s.vx*s.vx))}
   for(const b of s.bricks)if(b.alive&&hit({x:s.bx-8,y:s.by-8,w:16,h:16},b)){b.alive=false;score+=10*s.level;if(oldY+8<=b.y||oldY-8>=b.y+b.h)s.vy*=-1;else s.vx*=-1;break}
-  if(s.bricks.every(b=>!b.alive)){if(s.level>=5){finish(true);return}s.level++;score+=100;s.bricks=breakoutBricks(s.level);s.bx=s.x+45;s.by=440;s.vx=155+s.level*12;s.vy=-(250+s.level*15);hud()}
-  if(s.by>550){if(--s.lives===0){finish();return}s.bx=s.x+45;s.by=440;s.vx=145+s.level*8;s.vy=-(245+s.level*12)}
+  if(s.bricks.every(b=>!b.alive)){if(s.level>=5){finish(true);return}window.NDPolish?.flash();s.level++;score+=100;s.bricks=breakoutBricks(s.level);s.bx=s.x+45;s.by=440;s.vx=155+s.level*12;s.vy=-(250+s.level*15);hud()}
+  if(s.by>550){window.NDPolish?.shake();if(--s.lives===0){finish();return}s.bx=s.x+45;s.by=440;s.vx=145+s.level*8;s.vy=-(245+s.level*12)}
  }
  if(kind==='flappy'){
   const cfg=variant==='chill'?{speed:140,gap:185,grav:680}:variant==='pro'?{speed:195,gap:138,grav:820}:{speed:165,gap:160,grav:760};
@@ -47,8 +47,8 @@ function update(dt){
   s.wave=1+Math.floor(elapsed/18);s.inv=Math.max(0,s.inv-dt);s.x=clamp(s.x+move*315*dt,12,352);s.cool-=dt;if(keys.fire&&s.cool<=0){s.bullets.push({x:s.x+15,y:460,w:6,h:16});s.cool=variant==='rapid'?.11:.18}
   const spawnBase=variant==='survival'?.52:.72;s.spawn-=dt;if(s.spawn<=0){s.enemies.push({x:20+Math.random()*322,y:-40,w:38,h:30,fire:.8+Math.random()*1.2,hp:1+(s.wave>4&&Math.random()<.3?1:0)});s.spawn=Math.max(.24,spawnBase-s.wave*.035)}
   for(const b of s.bullets)b.y-=500*dt;
-  for(const e of s.enemies){e.y+=(55+s.wave*8)*dt;e.fire-=dt;if(e.fire<=0){s.shots.push({x:e.x+16,y:e.y+30,w:6,h:12});e.fire=Math.max(.65,2-s.wave*.08)}for(const b of s.bullets)if(!b.dead&&!e.dead&&hit(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=10+s.wave*2}}if(!e.dead&&(e.y>H||hit(e,{x:s.x,y:460,w:36,h:32}))&&s.inv<=0){e.dead=true;s.hp--;s.inv=1.1;if(s.hp<=0){finish();return}}}
-  for(const b of s.shots){b.y+=(235+s.wave*8)*dt;if(!b.dead&&s.inv<=0&&hit(b,{x:s.x,y:460,w:36,h:32})){b.dead=true;s.hp--;s.inv=1.1;if(s.hp<=0){finish();return}}}
+  for(const e of s.enemies){e.y+=(55+s.wave*8)*dt;e.fire-=dt;if(e.fire<=0){s.shots.push({x:e.x+16,y:e.y+30,w:6,h:12});e.fire=Math.max(.65,2-s.wave*.08)}for(const b of s.bullets)if(!b.dead&&!e.dead&&hit(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=10+s.wave*2}}if(!e.dead&&(e.y>H||hit(e,{x:s.x,y:460,w:36,h:32}))&&s.inv<=0){e.dead=true;s.hp--;s.inv=1.1;window.NDPolish?.shake();if(s.hp<=0){finish();return}}}
+  for(const b of s.shots){b.y+=(235+s.wave*8)*dt;if(!b.dead&&s.inv<=0&&hit(b,{x:s.x,y:460,w:36,h:32})){b.dead=true;s.hp--;s.inv=1.1;window.NDPolish?.shake();if(s.hp<=0){finish();return}}}
   s.bullets=s.bullets.filter(b=>!b.dead&&b.y>-20);s.enemies=s.enemies.filter(e=>!e.dead);s.shots=s.shots.filter(b=>!b.dead&&b.y<H);
  }
  hud();
