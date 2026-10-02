@@ -28,7 +28,7 @@ app.get('/health', (_req, res) => {
 });
 // The main arcade is on GitHub Pages; allow its HTTPS fallback to this server.
 app.use('/mp/exchange', (req, res, next) => {
-  if (req.headers.origin === 'https://charliesturm0106-alt.github.io') {
+  if (req.headers.origin === 'https://neonsarcade32.github.io') {
     res.set('Access-Control-Allow-Origin', req.headers.origin);
     res.set('Vary', 'Origin');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
