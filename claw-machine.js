@@ -12,7 +12,7 @@ function finish(){play=false;$('title').textContent='PRIZE RUN COMPLETE';$('msg'
 function drop(){if(play&&phase==='idle'){phase='down';grab=null;open=.9;hud()}}
 function nearest(){let bp=null,bd=1e9;for(const p of prizes)if(!p.taken){const d=Math.abs(p.x-x);if(d<bd){bd=d;bp=p}}return{p:bp,d:bd}}
 function update(dt){if(msgT>0){msgT-=dt;if(msgT<=0){msg='';$('toast').classList.remove('show')}}if(!play)return;const q=cfg();if(phase==='idle'){x=Math.max(72,Math.min(568,x+dir*q.speed*dt));open=.9}
-else if(phase==='down'){y+=300*dt;open=Math.min(1,open+dt*1.8);if(y>=424){y=424;open=Math.max(.15,open-dt*7);const n=nearest();if(n.p&&n.d<=q.tol){grab=n.p;grab.taken=true;combo++;toast('GRABBED '+grab.emoji)}else{combo=0;toast('MISSED')}phase='up'}}
+else if(phase==='down'){y+=300*dt;open=Math.min(1,open+dt*1.8);if(y>=424){y=424;open=Math.max(.15,open-dt*7);const n=nearest();if(n.p&&n.d<=q.tol){grab=n.p;grab.taken=true;combo++;window.NDPolish?.flash();toast('GRABBED '+grab.emoji)}else{combo=0;window.NDPolish?.shake();toast('MISSED')}phase='up'}}
 else if(phase==='up'){y-=305*dt;open=.2;if(grab){grab.x=x;grab.y=y+48}if(y<=82){y=82;phase=grab?'chute':'home'}}
 else if(phase==='chute'){x-=260*dt;if(grab){grab.x=x;grab.y=y+48}if(x<=chute){x=chute;const gain=grab.val+combo*20;score+=gain;toast('+'+gain);grab=null;used++;phase='home'}}
 else if(phase==='home'){const dx=home-x;if(Math.abs(dx)<4){x=home;phase='idle';if(used>=q.credits||prizes.every(p=>p.taken)){finish();return}}else x+=Math.sign(dx)*285*dt}hud()}
