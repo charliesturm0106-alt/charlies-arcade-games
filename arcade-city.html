@@ -629,9 +629,19 @@ function updateMultiplayer(dt){updateRemotePlayers(dt);if(!mp.joined||!mp.socket
 const rawStart=state.lastParking&&Number.isFinite(state.lastParking.x)&&Number.isFinite(state.lastParking.z)?state.lastParking:{x:-225,z:-215},startPos={x:clamp(rawStart.x,-WORLD+12,WORLD-12),z:clamp(rawStart.z,-WORLD+12,WORLD-12)};
 const player={mesh:makeCar(cars[0].color,1,true),pos:new THREE.Vector3(startPos.x,0,startPos.z),heading:0,speed:0,steer:0,drift:0};scene.add(player.mesh);player.mesh.position.copy(player.pos);
 let travelMode='car';
-const character={mesh:makePedestrian(),pos:new THREE.Vector3(startPos.x,0,startPos.z),heading:0,walkTime:0,moving:false};
-character.mesh.visible=false;character.mesh.scale.setScalar(1.08);scene.add(character.mesh);
-const avatarAccent=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.18),new THREE.MeshStandardMaterial({color:0x43dfff,roughness:.7}));avatarAccent.position.set(0,1.15,-.35);character.mesh.add(avatarAccent);
+function makePlayerCharacter(){
+ const g=new THREE.Group(),shirt=new THREE.MeshStandardMaterial({color:0x2f8ed8,roughness:.82}),pants=new THREE.MeshStandardMaterial({color:0x202731,roughness:.92}),skin=new THREE.MeshStandardMaterial({color:0xd7a37c,roughness:.9}),shoe=new THREE.MeshStandardMaterial({color:0x101419,roughness:.95});
+ const torso=new THREE.Mesh(new THREE.BoxGeometry(.82,1.05,.48),shirt);torso.position.y=1.55;g.add(torso);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),skin);head.position.y=2.34;g.add(head);
+ const makeLimb=(x,y,mat,len=.88,w=.24)=>{const pivot=new THREE.Group();pivot.position.set(x,y,0);const limb=new THREE.Mesh(new THREE.BoxGeometry(w,len,w),mat);limb.position.y=-len*.5;pivot.add(limb);g.add(pivot);return pivot};
+ const leftArm=makeLimb(-.56,1.98,skin,.88,.20),rightArm=makeLimb(.56,1.98,skin,.88,.20);
+ const leftLeg=makeLimb(-.22,1.03,pants,1.0,.27),rightLeg=makeLimb(.22,1.03,pants,1.0,.27);
+ for(const leg of [leftLeg,rightLeg]){const foot=new THREE.Mesh(new THREE.BoxGeometry(.32,.18,.52),shoe);foot.position.set(0,-1.02,.12);leg.add(foot)}
+ const badge=new THREE.Mesh(new THREE.BoxGeometry(.34,.28,.08),new THREE.MeshStandardMaterial({color:0x50e4ff,emissive:0x1aa8d8,emissiveIntensity:.55,roughness:.5}));badge.position.set(0,1.62,.29);g.add(badge);
+ g.userData={torso,head,leftArm,rightArm,leftLeg,rightLeg};return g
+}
+const character={mesh:makePlayerCharacter(),pos:new THREE.Vector3(startPos.x,0,startPos.z),heading:0,walkTime:0,moving:false};
+character.mesh.visible=false;scene.add(character.mesh);
 function activePos(){return travelMode==='foot'?character.pos:player.pos}
 function activeHeading(){return travelMode==='foot'?character.heading:player.heading}
 function resetMoveKeys(){keys.up=keys.down=keys.left=keys.right=keys.hand=false;steerTouch=0}
@@ -641,12 +651,12 @@ function updateTravelUI(){
 }
 function exitCar(){
  if(travelMode==='foot')return;if(activeRace)return popup('Finish or quit the race before exiting');if(Math.abs(player.speed)>2.8)return popup('Slow down before exiting');
- player.speed=0;player.steer=0;travelMode='foot';const sideX=Math.cos(player.heading)*3.8,sideZ=-Math.sin(player.heading)*3.8;let x=player.pos.x+sideX,z=player.pos.z+sideZ;if(collisionAt(x,z)){x=player.pos.x-sideX;z=player.pos.z-sideZ}
+ player.speed=0;player.steer=0;player.drift=0;jumpY=0;jumpVel=0;travelMode='foot';const sideX=Math.cos(player.heading)*3.8,sideZ=-Math.sin(player.heading)*3.8;let x=player.pos.x+sideX,z=player.pos.z+sideZ;if(collisionAt(x,z)){x=player.pos.x-sideX;z=player.pos.z-sideZ}
  character.pos.set(x,0,z);character.heading=player.heading;character.mesh.position.copy(character.pos);character.mesh.rotation.y=character.heading;character.mesh.visible=true;resetMoveKeys();updateTravelUI();popup('🚶 ON FOOT · E near your car to get back in')
 }
 function enterCar(){
  if(travelMode==='car')return;const d=Math.hypot(character.pos.x-player.pos.x,character.pos.z-player.pos.z);if(d>7)return popup('Move closer to your car');
- travelMode='car';character.mesh.visible=false;resetMoveKeys();updateTravelUI();popup('🚗 BACK IN THE CAR')
+ travelMode='car';player.speed=0;player.steer=0;character.mesh.visible=false;resetMoveKeys();updateTravelUI();popup('🚗 BACK IN THE CAR')
 }
 
 function currentCar(){return cars.find(c=>c.id===state.car)||cars[0]}
@@ -882,7 +892,7 @@ let trafficDensityTimer=0,signalVisualTimer=0;
 function createTraffic(){traffic.forEach(t=>scene.remove(t.mesh));traffic.length=0;for(let i=0;i<desiredTrafficCount();i++)traffic.push(spawnTrafficAgent(false))}
 function syncTrafficDensity(dt){trafficDensityTimer-=dt;if(trafficDensityTimer>0)return;trafficDensityTimer=3;const want=desiredTrafficCount();while(traffic.length<want)traffic.push(spawnTrafficAgent(false));while(traffic.length>want){const t=traffic.pop();scene.remove(t.mesh)}}
 function updateTrafficAgent(t,dt){if(t.turnCooldown>0)t.turnCooldown-=dt;t.lane=lerp(t.lane,t.laneTarget,clamp(dt*.65,0,1));const target=trafficTargetPoint(t,t.next),dx=target.x-t.mesh.position.x,dz=target.z-t.mesh.position.z,d=Math.hypot(dx,dz),desired=Math.atan2(dx,dz),vertical=target.vertical;let targetSpeed=t.cruise*(weatherState==='RAIN'?.72:weatherState==='OVERCAST'?.9:1);if(d<15&&!trafficSignalAllows(vertical))targetSpeed=0;const pd=Math.hypot(t.mesh.position.x-player.pos.x,t.mesh.position.z-player.pos.z);if(pd<12){const ahead=Math.cos(angleDiff(Math.atan2(player.pos.x-t.mesh.position.x,player.pos.z-t.mesh.position.z),t.heading));if(ahead>.15){targetSpeed=Math.min(targetSpeed,4);t.laneTarget=t.lane>0?5.4:-5.4}}else t.laneTarget=t.laneTarget>0?4.3:-4.3;t.speed=lerp(t.speed,targetSpeed,clamp(dt*(targetSpeed<t.speed?3.5:1.4),0,1));t.heading+=clamp(angleDiff(desired,t.heading),-1.35*dt,1.35*dt);t.mesh.position.x+=Math.sin(t.heading)*t.speed*dt;t.mesh.position.z+=Math.cos(t.heading)*t.speed*dt;t.mesh.rotation.y=t.heading;t.mesh.userData.wheels?.forEach(w=>w.rotation.x-=t.speed*dt*.8);if(d<3.8&&t.turnCooldown<=0)chooseNextTrafficNode(t)}
-function updateTraffic(dt){if(trafficHitCooldown>0)trafficHitCooldown-=dt;syncTrafficDensity(dt);signalVisualTimer-=dt;if(signalVisualTimer<=0){signalVisualTimer=.15;updateTrafficLights()}for(const t of traffic){updateTrafficAgent(t,dt);if(Math.hypot(t.mesh.position.x-player.pos.x,t.mesh.position.z-player.pos.z)<4.1){if(trafficHitCooldown<=0&&Math.abs(player.speed)>7){if(!activeRace)raiseWanted(50);addDamage(Math.min(20,Math.abs(player.speed)*.38));trafficHitCooldown=1.1}player.speed*=-.2}}}
+function updateTraffic(dt){if(trafficHitCooldown>0)trafficHitCooldown-=dt;syncTrafficDensity(dt);signalVisualTimer-=dt;if(signalVisualTimer<=0){signalVisualTimer=.15;updateTrafficLights()}for(const t of traffic){updateTrafficAgent(t,dt);if(travelMode==='car'&&Math.hypot(t.mesh.position.x-player.pos.x,t.mesh.position.z-player.pos.z)<4.1){if(trafficHitCooldown<=0&&Math.abs(player.speed)>7){if(!activeRace)raiseWanted(50);addDamage(Math.min(20,Math.abs(player.speed)*.38));trafficHitCooldown=1.1}player.speed*=-.2}}}
 createTraffic();
 function spawnSmoke(){
  const p=smoke.find(x=>x.life<=0);if(!p)return;p.life=.8;p.m.visible=true;p.m.material.opacity=.32;
@@ -926,12 +936,15 @@ function updatePlayer(dt){
 
 function updateCharacter(dt){
  if(travelMode!=='foot')return;
- const turn=clamp((keys.right?1:0)-(keys.left?1:0)+steerTouch,-1,1),forward=(keys.up?1:0)-(keys.down?1:0),sprint=keys.hand,moveSpeed=sprint?8.2:5.2;
- character.heading-=turn*2.45*dt;
- let moving=Math.abs(forward)>.01;
- if(moving){const step=forward*moveSpeed*dt,nx=character.pos.x+Math.sin(character.heading)*step,nz=character.pos.z+Math.cos(character.heading)*step;if(!collisionAt(nx,nz)){character.pos.x=nx;character.pos.z=nz}character.walkTime+=dt*(sprint?11:7)}
- character.moving=moving;character.mesh.position.set(character.pos.x,moving?Math.abs(Math.sin(character.walkTime))*0.035:0,character.pos.z);character.mesh.rotation.y=character.heading;
- const l=character.mesh.children[2],r=character.mesh.children[3],swing=moving?Math.sin(character.walkTime)*.58:0;if(l)l.rotation.x=lerp(l.rotation.x,swing,.28);if(r)r.rotation.x=lerp(r.rotation.x,-swing,.28);
+ const turn=clamp((keys.right?1:0)-(keys.left?1:0)+steerTouch,-1,1),forward=(keys.up?1:0)-(keys.down?1:0),sprint=keys.hand,moveSpeed=sprint?8.6:5.3;
+ character.heading-=turn*(sprint?2.8:2.45)*dt;
+ const moving=Math.abs(forward)>.01;
+ if(moving){const step=forward*moveSpeed*dt,nx=character.pos.x+Math.sin(character.heading)*step,nz=character.pos.z+Math.cos(character.heading)*step;if(!collisionAt(nx,nz)){character.pos.x=nx;character.pos.z=nz}character.walkTime+=dt*(sprint?12.8:8.2)}
+ character.moving=moving;const limbs=character.mesh.userData,swing=moving?Math.sin(character.walkTime)*(sprint?.92:.68)*Math.sign(forward||1):0,armSwing=-swing*.88,bob=moving?Math.abs(Math.sin(character.walkTime*2))*(sprint?.075:.045):0,lean=moving?(sprint?.18:.07)*Math.sign(forward):0;
+ character.mesh.position.set(character.pos.x,bob,character.pos.z);character.mesh.rotation.y=character.heading;
+ if(limbs.leftLeg)limbs.leftLeg.rotation.x=lerp(limbs.leftLeg.rotation.x,swing,.38);if(limbs.rightLeg)limbs.rightLeg.rotation.x=lerp(limbs.rightLeg.rotation.x,-swing,.38);
+ if(limbs.leftArm)limbs.leftArm.rotation.x=lerp(limbs.leftArm.rotation.x,armSwing,.38);if(limbs.rightArm)limbs.rightArm.rotation.x=lerp(limbs.rightArm.rotation.x,-armSwing,.38);
+ if(limbs.torso)limbs.torso.rotation.x=lerp(limbs.torso.rotation.x,lean,.25);if(limbs.head)limbs.head.position.y=2.34+bob*.25;
  const district=districtName();if(!state.discoveredDistricts.includes(district)){state.discoveredDistricts.push(district);state.rep+=20;popup('📍 DISCOVERED · '+district+' · +20 REP');save()}
 }
 function wantedLevel(){return wantedHeat<=0?0:Math.min(5,Math.ceil(wantedHeat/80))}
@@ -1098,8 +1111,8 @@ function updateFreeEvent(){
  else if(activeFreeEvent.type==='escape'&&!chaseActive){reward(activeFreeEvent.reward,100);state.eventsDone++;popup('🚓 Escape challenge complete');clearFreeEvent()}
 }
 function updateEvents(dt){updateFreeEvent();if(speedCooldown>0)speedCooldown-=dt;if(activeRace&&activeRace.phase==='racing'){const p=activeRace.route[activeRace.index];if(p&&Math.hypot(player.pos.x-p[0],player.pos.z-p[1])<14){const gate=checkpoints[activeRace.index-1];if(gate)gate.visible=false;const elapsed=(performance.now()-activeRace.start)/1000,split=elapsed-(activeRace.lastSplit||0);activeRace.lastSplit=elapsed;activeRace.lastSplitTime=split;activeRace.splits.push(elapsed);activeRace.lastPassed=activeRace.index;activeRace.index++;if(activeRace.index>=activeRace.route.length)finishRace();else{popup('⏱ SPLIT '+split.toFixed(1)+'s');updateMission()}}}
-const inDrift=player.pos.x>driftZone.x1&&player.pos.x<driftZone.x2&&player.pos.z>driftZone.z1&&player.pos.z<driftZone.z2;if(inDrift&&player.drift>=220&&!activeRace){const score=Math.floor(player.drift),cash=700+Math.floor(score*1.4);reward(cash,55);popup('💨 DRIFT '+score+' · +$'+cash);player.drift=0;save()}
-if(speedCooldown<=0&&Math.hypot(player.pos.x-speedTrap.x,player.pos.z-speedTrap.z)<6&&!activeRace){const mph=Math.floor(Math.abs(player.speed)*2.23694);if(mph>=speedTrap.need){const cash=650+(mph-speedTrap.need)*25;reward(cash,40);popup('📸 '+mph+' MPH · reward '+cash);speedCooldown=4;save()}}
+const inDrift=travelMode==='car'&&player.pos.x>driftZone.x1&&player.pos.x<driftZone.x2&&player.pos.z>driftZone.z1&&player.pos.z<driftZone.z2;if(inDrift&&player.drift>=220&&!activeRace){const score=Math.floor(player.drift),cash=700+Math.floor(score*1.4);reward(cash,55);popup('💨 DRIFT '+score+' · +$'+cash);player.drift=0;save()}
+if(travelMode==='car'&&speedCooldown<=0&&Math.hypot(player.pos.x-speedTrap.x,player.pos.z-speedTrap.z)<6&&!activeRace){const mph=Math.floor(Math.abs(player.speed)*2.23694);if(mph>=speedTrap.need){const cash=650+(mph-speedTrap.need)*25;reward(cash,40);popup('📸 '+mph+' MPH · reward '+cash);speedCooldown=4;save()}}
 if(activeJob&&activeJob.type==='delivery'){const elapsed=(performance.now()-activeJob.start)/1000;if(elapsed>activeJob.timeLimit)failDelivery();else if(Math.hypot(player.pos.x-activeJob.target[0],player.pos.z-activeJob.target[1])<8)finishDelivery()}
 const actor=activePos();let nearest=null,dist=1e9;for(const m of markers){const d=Math.hypot(m.x-actor.x,m.z-actor.z);if(d<dist){dist=d;nearest=m}}currentPrompt=dist<10?nearest:null;const secretDist=Math.hypot(secretKeypad.position.x-actor.x,secretKeypad.position.z-actor.z);if(secretDist<5.5)currentPrompt={type:'secretkeypad',label:'KEYPAD'};
 if(!currentPrompt&&!activeRace){if(travelMode==='car'&&Math.abs(player.speed)<2.8)currentPrompt={type:'exitcar',label:'Exit car'};else if(travelMode==='foot'&&Math.hypot(character.pos.x-player.pos.x,character.pos.z-player.pos.z)<7)currentPrompt={type:'entercar',label:'Enter car'}}
