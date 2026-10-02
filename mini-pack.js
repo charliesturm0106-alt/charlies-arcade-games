@@ -75,9 +75,10 @@ function updateGolf(dt){
  const s=state,b=s.ball,h=s.holes[s.hole],d=cfg();if(!s.settled){let nx=b.x+b.vx*dt,ny=b.y+b.vy*dt;const r=9;if(nx<r||nx>W-r){b.vx*=-.70;nx=clamp(nx,r,W-r)}if(ny<r||ny>H-r){b.vy*=-.70;ny=clamp(ny,r,H-r)}
   for(const o of h.blocks){if(circleRect(nx,ny,r,o)){const hitX=b.x<o.x||b.x>o.x+o.w;if(hitX)b.vx*=-.72;else b.vy*=-.72;nx=b.x+b.vx*dt;ny=b.y+b.vy*dt;beep(260,.025);break}}
   b.x=nx;b.y=ny;if(h.water.some(o=>pointInRect(b.x,b.y,o))){s.strokes++;s.penalty++;toast('WATER +1');loadHole();return}
-  const inSand=h.sand.some(o=>pointInRect(b.x,b.y,o)),drag=Math.pow(inSand?.955:.986-difficulty*.0015,dt*60);b.vx*=drag;b.vy*=drag;let sp=Math.hypot(b.vx,b.vy);const cupDx=h.cup[0]-b.x,cupDy=h.cup[1]-b.y,cupDist=Math.hypot(cupDx,cupDy),cupR=17-difficulty*1.25,catchR=cupR+11,catchSpeed=155-difficulty*12;
-  if(cupDist<catchR&&sp<catchSpeed&&cupDist>1){const pull=(1-cupDist/catchR)*(125-difficulty*10);b.vx+=cupDx/cupDist*pull*dt;b.vy+=cupDy/cupDist*pull*dt;b.vx*=Math.pow(.94,dt*60);b.vy*=Math.pow(.94,dt*60);sp=Math.hypot(b.vx,b.vy)}
-  if(cupDist<cupR&&sp<125-difficulty*9){b.x=h.cup[0];b.y=h.cup[1];b.vx=b.vy=0;score+=Math.round((1050-s.strokes*120+h.par*55)*d.reward);s.totalStrokes+=s.strokes;s.hole++;beep(900,.09);if(s.hole>=s.holes.length){score+=Math.max(0,2500-s.totalStrokes*70);finish('Course Complete','Total strokes: '+s.totalStrokes);return}loadHole();toast('SUNK! · HOLE '+(s.hole+1))}
+  const inSand=h.sand.some(o=>pointInRect(b.x,b.y,o)),drag=Math.pow(inSand?.955:.986-difficulty*.0015,dt*60);b.vx*=drag;b.vy*=drag;let sp=Math.hypot(b.vx,b.vy);const cupDx=h.cup[0]-b.x,cupDy=h.cup[1]-b.y,cupDist=Math.hypot(cupDx,cupDy),cupR=18-difficulty*.75,catchR=cupR+13;
+  if(cupDist<catchR&&sp<240&&cupDist>1){const pull=(1-cupDist/catchR)*(170-difficulty*8);b.vx+=cupDx/cupDist*pull*dt;b.vy+=cupDy/cupDist*pull*dt;b.vx*=Math.pow(.92,dt*60);b.vy*=Math.pow(.92,dt*60);sp=Math.hypot(b.vx,b.vy)}
+  const crossedCup=cupDist<cupR&&sp<310;
+  if(crossedCup){b.x=h.cup[0];b.y=h.cup[1];b.vx=b.vy=0;score+=Math.round((1050-s.strokes*120+h.par*55)*d.reward);s.totalStrokes+=s.strokes;s.hole++;beep(900,.09);if(s.hole>=s.holes.length){score+=Math.max(0,2500-s.totalStrokes*70);finish('Course Complete','Total strokes: '+s.totalStrokes);return}loadHole();toast('SUNK! · HOLE '+(s.hole+1))}
   else if(sp<6){b.vx=b.vy=0;s.settled=true}
  }
 }
