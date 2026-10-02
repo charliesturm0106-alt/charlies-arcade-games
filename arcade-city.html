@@ -475,8 +475,8 @@ function buildSeamlessNeighborhoods(){
   ['desertfuel','DESERT FUEL',-610,-616,'gas',0x4a3d2d,0x65b8ff],['southmotors','SOUTH MOTORS',-540,-616,'dealer2',0x49365d,0xa57cff]
  ];
  for(const [id,label,x,z,serviceType,color,accent] of southShops)addWalkInBuilding({id,label,x,z,w:24,d:18,doorSide:'north',kind:'shop',serviceType,color,accent});
- addWalkInBuilding({id:'neonmart',label:'NEON MART',-470,-616,w:22,d:18,doorSide:'north',kind:'shop',color:0x395246,accent:0x75f1a8});
- addWalkInBuilding({id:'coastcafe',label:'COAST CAFE',755,-80,w:22,d:18,doorSide:'south',kind:'shop',color:0x5b4637,accent:0xffba78});
+ addWalkInBuilding({id:'neonmart',label:'NEON MART',x:-470,z:-616,w:22,d:18,doorSide:'north',kind:'shop',color:0x395246,accent:0x75f1a8});
+ addWalkInBuilding({id:'coastcafe',label:'COAST CAFE',x:755,z:-80,w:22,d:18,doorSide:'south',kind:'shop',color:0x5b4637,accent:0xffba78});
 }
 buildSeamlessNeighborhoods();
 
