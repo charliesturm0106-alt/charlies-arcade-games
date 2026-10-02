@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: charliesturm0106-arcade-mp
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
