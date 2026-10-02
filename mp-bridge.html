@@ -19,8 +19,9 @@ async function exchange(message){
  try{
   const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,message}),cache:'no-store'};
   if(controller)opts.signal=controller.signal;
+  post('debug',{message:'CONTACTING SERVER'});
   const r=await fetch('/mp/exchange',opts);if(!r.ok)throw new Error('HTTP '+r.status);
-  const body=await r.json();failures=0;
+  const body=await r.json();failures=0;post('debug',{message:'SERVER RESPONSE '+r.status});
   for(const m of body.messages||[])post('message',{message:m});
  }catch(e){
   failures++;
@@ -31,10 +32,10 @@ async function exchange(message){
 window.addEventListener('message',e=>{
  if(e.origin!==PARENT||!e.data||e.data.arcadeBridge!==true)return;
  const d=e.data;
- if(d.type==='connect'&&!started){started=true;token=uuid();exchange(d.initial)}
+ if(d.type==='connect'&&!started){started=true;token=uuid();post('debug',{message:'BRIDGE CONNECT RECEIVED'});exchange(d.initial)}
  else if(d.type==='send'&&!closed){pending=d.message}
  else if(d.type==='close'){closed=true;clearTimeout(poll);if(token)fetch('/mp/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,message:{type:'leave'}}),keepalive:true}).catch(()=>{})}
 });
-post('ready');
+post('debug',{message:'BRIDGE SCRIPT RUNNING'});post('ready');
 })();
 </script></body></html>
