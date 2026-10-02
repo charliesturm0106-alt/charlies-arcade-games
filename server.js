@@ -8,10 +8,12 @@ const { WebSocketServer, WebSocket } = require('ws');
 
 const PORT = Number(process.env.PORT || 8080);
 const MAX_PLAYERS = 6;
+const PUBLIC_MAX_PLAYERS = 24;
+const PUBLIC_PREFIX = 'CITY';
 const WORLD_LIMIT = 500;
 const rooms = new Map();
 const sessions = new Map();
-const VERSION = '1.2.2';
+const VERSION = '2.1.0';
 
 const app = express();
 app.disable('x-powered-by');
@@ -159,23 +161,29 @@ function leaveRoom(ws) {
   });
 }
 
+function publicRoomCode() {
+  let n = 1;
+  while ((rooms.get(PUBLIC_PREFIX + n)?.size || 0) >= PUBLIC_MAX_PLAYERS) n++;
+  return PUBLIC_PREFIX + n;
+}
 function joinRoom(ws, mode, data) {
-  const roomCode = cleanRoom(data.room);
+  const isPublic = mode === 'public';
+  const roomCode = isPublic ? publicRoomCode() : cleanRoom(data.room);
   if (ws.roomCode === roomCode && rooms.get(roomCode)?.has(ws)) {
     send(ws, { type: 'joined', id: rooms.get(roomCode).get(ws).player.id, room: roomCode, maxPlayers: MAX_PLAYERS, players: roomPlayers(roomCode) });
     return;
   }
-  if (roomCode.length < 4) {
+  if (!isPublic && roomCode.length < 4) {
     send(ws, { type: 'error', message: 'Room code must be 4–6 letters/numbers.' });
     return;
   }
 
   const exists = rooms.has(roomCode);
-  if (mode === 'create' && exists) {
+  if (!isPublic && mode === 'create' && exists) {
     send(ws, { type: 'error', message: 'That room already exists. Try another code.' });
     return;
   }
-  if (mode === 'join' && !exists) {
+  if (!isPublic && mode === 'join' && !exists) {
     send(ws, { type: 'error', message: 'Room not found.' });
     return;
   }
@@ -183,8 +191,9 @@ function joinRoom(ws, mode, data) {
   if (!exists) rooms.set(roomCode, new Map());
   const room = rooms.get(roomCode);
 
-  if (room.size >= MAX_PLAYERS) {
-    send(ws, { type: 'error', message: 'Room is full (6 players max).' });
+  const roomLimit = isPublic ? PUBLIC_MAX_PLAYERS : MAX_PLAYERS;
+  if (room.size >= roomLimit) {
+    send(ws, { type: 'error', message: isPublic ? 'Public world is busy. Reconnect to enter another world.' : 'Room is full (6 players max).' });
     return;
   }
 
@@ -215,7 +224,8 @@ function joinRoom(ws, mode, data) {
     type: 'joined',
     id: player.id,
     room: roomCode,
-    maxPlayers: MAX_PLAYERS,
+    maxPlayers: roomLimit,
+    public: isPublic,
     players: roomPlayers(roomCode)
   });
 
@@ -269,7 +279,7 @@ function getPeer(token) {
 }
 function receive(peer, data) {
   if (!data || typeof data.type !== 'string') return;
-  if (data.type === 'create' || data.type === 'join') return joinRoom(peer, data.type, data);
+  if (data.type === 'create' || data.type === 'join' || data.type === 'public') return joinRoom(peer, data.type, data);
   if (data.type === 'leave') return leaveRoom(peer);
   if (data.type === 'state' && Date.now() - peer.lastStateAt >= 25) {
     peer.lastStateAt = Date.now(); updateState(peer, data);
