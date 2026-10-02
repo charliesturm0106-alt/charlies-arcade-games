@@ -185,6 +185,18 @@ function addRoadRect(x,z,w,d,color=0x20262c){
  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshStandardMaterial({color,roughness:.96}));
  m.rotation.x=-Math.PI/2;m.position.set(x,.028,z);m.receiveShadow=true;city.add(m);roadZones.push({x,z,hw:w/2,hd:d/2});
 }
+function segmentPointInfo(seg,x,z){
+ const dx=seg.x2-seg.x1,dz=seg.z2-seg.z1,len2=dx*dx+dz*dz||1,t=clamp(((x-seg.x1)*dx+(z-seg.z1)*dz)/len2,0,1),px=seg.x1+dx*t,pz=seg.z1+dz*t;
+ return{t,x:px,z:pz,d:Math.hypot(x-px,z-pz),heading:Math.atan2(dx,dz)}
+}
+function addRoadSegment(x1,z1,x2,z2,width=22,color=0x20262c,dashes=true){
+ const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz);if(len<1)return;
+ const mat=new THREE.MeshStandardMaterial({color,roughness:.96}),m=new THREE.Mesh(new THREE.BoxGeometry(width,.055,len),mat);
+ m.position.set((x1+x2)/2,.03,(z1+z2)/2);m.rotation.y=Math.atan2(dx,dz);m.receiveShadow=true;city.add(m);
+ roadSegments.push({x1,z1,x2,z2,width});
+ if(dashes){const line=new THREE.MeshBasicMaterial({color:0xe7d476});for(let d=10;d<len-6;d+=18){const t=d/len,cx=x1+dx*t,cz=z1+dz*t,dash=new THREE.Mesh(new THREE.BoxGeometry(.48,.07,7),line);dash.position.set(cx,.065,cz);dash.rotation.y=Math.atan2(dx,dz);city.add(dash)}}
+}
+function addRoadPath(points,width=22,color=0x20262c){for(let i=1;i<points.length;i++)addRoadSegment(points[i-1][0],points[i-1][1],points[i][0],points[i][1],width,color)}
 function buildOuterRoads(){
  addRoadRect(0,-315,660,24);addRoadRect(0,315,660,24);addRoadRect(-315,0,24,660);addRoadRect(315,0,24,660);
  for(const v of [-234,0,234]){addRoadRect(v,-297.5,24,35);addRoadRect(v,297.5,24,35);addRoadRect(-297.5,v,35,24);addRoadRect(297.5,v,35,24)}
@@ -1071,6 +1083,11 @@ function updateCamera(dt){const mph=Math.abs(player.speed)*2.23694,backDist=12.5
 function resize(){const w=innerWidth,h=innerHeight;if(renderer.domElement.width!==Math.floor(w*renderer.getPixelRatio())||renderer.domElement.height!==Math.floor(h*renderer.getPixelRatio())){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
 function districtName(){
  const x=player.pos.x,z=player.pos.z;
+ if(z>650)return x<-220?'MOUNTAIN RIDGE':x>260?'NORTH SUBURBS':'PINE HEIGHTS';
+ if(z<-650)return x>180?'COAST HIGHWAY':x<-250?'DESERT OUTSKIRTS':'SOUTH COUNTY';
+ if(x>650)return z<120?'OCEANFRONT':'HARBOR HEIGHTS';
+ if(x<-650)return z>0?'CANYON PASS':'WEST COUNTY';
+ if(Math.abs(x)>500||Math.abs(z)>500)return 'SCENIC BELT';
  if(z>385&&x<-260)return 'STADIUM DISTRICT';
  if(z>385&&x>-260&&x<20)return 'NORTH RIDGE';
  if(z<-385&&x>60)return 'MARINA';
