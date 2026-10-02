@@ -965,15 +965,22 @@ function currentRacePlace(){
  if(!activeRace)return 1;const pp=playerRaceProgress();let ahead=0;for(const r of rivals)if(r.finished||r.distance>pp+1.5)ahead++;return Math.min(3,ahead+1)
 }
 function stageRace(r){
- clearCheckpoints();clearRivals();lastRaceConfig={id:r.id,name:r.name,reward:r.reward,rep:r.rep,repNeed:r.repNeed,x:r.x,z:r.z};
- const route=routes[r.id],metrics=routeMetrics(route),diff=raceDifficultyConfig();activeRace={...r,route,metrics,index:1,lastPassed:0,phase:'countdown',countdownEnd:performance.now()+3200,start:0,splits:[],lastSplit:0,lastSplitTime:0,resets:0,damageTaken:0,difficulty:diff};lastRaceBeep=-1;
+ clearCheckpoints();clearRivals();lastRaceConfig={...r};
+ const route=routes[r.id];
+ if(!Array.isArray(route)||route.length<2){popup('Race route unavailable · '+(r.name||r.id));return}
+ const metrics=routeMetrics(route),diff=raceDifficultyConfig();
+ activeRace={...r,route,metrics,index:1,lastPassed:0,phase:'countdown',countdownEnd:performance.now()+3200,start:0,splits:[],lastSplit:0,lastSplitTime:0,resets:0,damageTaken:0,difficulty:diff};lastRaceBeep=-1;
  setPlayerOnGrid(route,0);spawnRivals(r);
  for(let i=1;i<route.length;i++)checkpoints.push(makeRaceGate(route,i));
  $('raceControls').classList.add('show');$('raceCenter').classList.add('show');$('raceCountdown').textContent='3';$('raceCenterSub').textContent='GET READY';
  state.raceStarts++;trafficDensityTimer=0;updateMission();save()
 }
 function startRace(r){
- if(state.rep<(r.repNeed||0))return popup('Need '+r.repNeed+' REP');if(activeJob)return popup('Finish the courier job first');if(chaseActive)return popup('Lose the police first');
+ if(travelMode!=='car')return popup('Get in your car to start the race');
+ if(state.rep<(r.repNeed||0))return popup('Need '+r.repNeed+' REP');
+ if(activeJob)return popup('Finish the courier job first');
+ if(chaseActive)return popup('Lose the police first');
+ if(!routes[r.id])return popup('Race route unavailable');
  stageRace(r)
 }
 function updateRaceState(){
