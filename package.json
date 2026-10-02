@@ -1,8 +1,8 @@
 {
-  "name": "charlies-arcade-games",
+  "name": "neon-district-arcade",
   "version": "1.2.2",
   "private": true,
-  "description": "Charlie's Arcade with Arcade City 3D private-room multiplayer",
+  "description": "Neon District arcade with Arcade City 3D Open World multiplayer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
